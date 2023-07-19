@@ -14,14 +14,10 @@ namespace FileOrbisApi.Controllers
     public class FileController : ControllerBase
     {
         private readonly GenericManager<FileInfos> _fileManager;
-        private readonly GenericManager<FolderInfo> _folderManager;
-        private readonly GenericManager<UserInfo> _userManager;
 
-        public FileController(IGenericDal<FileInfos> fileDal, IGenericDal<FolderInfo> folderDal, IGenericDal<UserInfo> userDal)
+        public FileController(IGenericDal<FileInfos> fileDal)
         {
             _fileManager = new GenericManager<FileInfos>(fileDal);
-            _folderManager = new GenericManager<FolderInfo>(folderDal);
-            _userManager = new GenericManager<UserInfo>(userDal);
         }
 
         [HttpGet]
