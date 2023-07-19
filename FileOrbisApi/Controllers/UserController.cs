@@ -40,6 +40,11 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public IActionResult CreateUser([FromBody] UserInfo user)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             using (var context = new FileOrbisContext())
             {
                 context.UserInfo.Add(user);
@@ -48,7 +53,6 @@ namespace FileOrbisApi.Controllers
 
             return CreatedAtAction(nameof(GetAllUsers), new { id = user.UserID }, user);
         }
-
         [HttpDelete]
         [Route("[action]/{id}")]
         public IActionResult DeleteUser(int id)
