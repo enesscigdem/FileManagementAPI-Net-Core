@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>C:\Users\Eness\source\repos\FileOrbisApi\FileOrbisApi\obj\Debug\net6.0\FileOrbisApi.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FileOrbis.BusinessLayer\FileOrbis.BusinessLayer.csproj" />
+    <ProjectReference Include="..\FileOrbis.DataAccessLayer\FileOrbis.DataAccessLayer.csproj" />
+    <ProjectReference Include="..\FileOrbis.EntityLayer\FileOrbis.EntityLayer.csproj" />
+  </ItemGroup>
+
+</Project>
