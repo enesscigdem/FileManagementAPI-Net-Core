@@ -26,7 +26,7 @@ namespace FileOrbis.DataAccessLayer.Repositories
         public T GetListByID(int id)
         {
             using var c = new FileOrbisContext();
-            return _context.Set<T>().Find(id);
+            return _context.Set< T>().Find(id);
         }
     }
 }

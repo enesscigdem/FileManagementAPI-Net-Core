@@ -19,5 +19,9 @@ namespace FileOrbis.EntityLayer.Concrete
         public int UserID { get; set; }
         public virtual UserInfo? User { get; set; }
 
+
+       
+
+
     }
 }

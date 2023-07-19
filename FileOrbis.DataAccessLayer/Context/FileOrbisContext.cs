@@ -15,8 +15,10 @@ namespace FileOrbis.DataAccessLayer.Context
             optionsBuilder.UseSqlServer("server=FILEORBIS;database=FileOrbisDb;integrated security=true; TrustServerCertificate=True;");
 
         }
-        public DbSet<UserInfo> UserInfo{ get; set; }
-        public DbSet<FileInfos> FileInfo{ get; set; }
-        public DbSet<FolderInfo> FolderInfo{ get; set; }
+        public DbSet<UserInfo> UserInfo { get; set; }
+        public DbSet<FileItem> FileItems { get; set; }
+
+        //public DbSet<FileInfos> FileInfo{ get; set; }
+        //public DbSet<FolderInfo> FolderInfo{ get; set; }
     }
 }
