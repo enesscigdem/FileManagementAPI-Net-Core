@@ -13,26 +13,26 @@ namespace FileOrbisApi.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
-        private readonly GenericManager<FileInfos> _fileManager;
+        private IGenericService<FileInfos> _genericService;
 
-        public FileController(IGenericDal<FileInfos> fileDal)
+        public FileController(IGenericService<FileInfos> genericService)
         {
-            _fileManager = new GenericManager<FileInfos>(fileDal);
+            _genericService = genericService;
         }
 
         [HttpGet]
         [Route("[action]")]
-        public IActionResult GetAllFiles()
+        public async Task<IActionResult> GetAllFiles()
         {
-            var fileList = _fileManager.GetListAll();
+            var fileList = await _genericService.GetListAll();
             return Ok(fileList);
         }
 
         [HttpGet]
         [Route("[action]/{id}")]
-        public IActionResult GetFileByID(int id)
+        public async Task<IActionResult> GetFileByID(int id)
         {
-            var file = _fileManager.GetListByID(id);
+            var file = await _genericService.GetListByID(id);
             if (file == null)
             {
                 return NotFound();
@@ -42,34 +42,22 @@ namespace FileOrbisApi.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        public IActionResult PostFile([FromBody] FileInfos file)
+        public async Task<IActionResult> CreateFile([FromBody] FileInfos file)
         {
-            using (var context = new FileOrbisContext())
-            {
-                context.FileInfo.Add(file);
-                context.SaveChanges();
-            }
-
-            return CreatedAtAction(nameof(GetAllFiles), new { id = file.FileID }, file);
+            var createFile = await _genericService.Create(file);
+            return CreatedAtAction("GetAllFiles", new { id = file.FileID }, createFile);
         }
 
         [HttpDelete]
         [Route("[action]/{id}")]
-        public IActionResult DeleteFile(int id)
+        public async Task<IActionResult> DeleteFile(int id)
         {
-            var file = _fileManager.GetListByID(id);
-            if (file == null)
+            if (_genericService.GetListByID(id)!=null)
             {
-                return NotFound();
+                await _genericService.Delete(id);
+                return Ok();
             }
-
-            using (var context = new FileOrbisContext())
-            {
-                context.FileInfo.Remove(file);
-                context.SaveChanges();
-            }
-
-            return NoContent();
+            return NotFound();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using FileOrbis.BusinessLayer.Concrete;
+﻿using FileOrbis.BusinessLayer.Abstract;
+using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
@@ -11,24 +12,26 @@ namespace FileOrbisApi.Controllers
     [ApiController]
     public class FolderController : ControllerBase
     {
-        private readonly GenericManager<FolderInfo> _folderManager;
-        public FolderController(IGenericDal<FolderInfo> folderDal)
+        private IGenericService<FolderInfo> _genericService;
+
+        public FolderController(IGenericService<FolderInfo> genericService)
         {
-            _folderManager = new GenericManager<FolderInfo>(folderDal);
+            _genericService = genericService;
         }
+
         [HttpGet]
         [Route("[action]")]
-        public IActionResult GetAllFolders()
+        public async Task<IActionResult> GetAllFolders()
         {
-            var folderList = _folderManager.GetListAll();
+            var folderList = await _genericService.GetListAll();
             return Ok(folderList);
         }
 
         [HttpGet]
         [Route("[action]/{id}")]
-        public IActionResult GetFolderByID(int id)
+        public async Task<IActionResult> GetFolderByID(int id)
         {
-            var folder = _folderManager.GetListByID(id);
+            var folder = await _genericService.GetListByID(id);
             if (folder == null)
             {
                 return NotFound();
@@ -38,34 +41,22 @@ namespace FileOrbisApi.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        public IActionResult PostFolder([FromBody] FolderInfo folder)
+        public async Task<IActionResult> CreateFolder([FromBody] FolderInfo folder)
         {
-            using (var context = new FileOrbisContext())
-            {
-                context.FolderInfo.Add(folder);
-                context.SaveChanges();
-            }
-
-            return CreatedAtAction(nameof(GetAllFolders), new { id = folder.FolderID }, folder);
+            var createFolder = await _genericService.Create(folder);
+            return CreatedAtAction("GetAllFolders", new { id = folder.FolderID }, createFolder);
         }
 
         [HttpDelete]
         [Route("[action]/{id}")]
-        public IActionResult DeleteFolder(int id)
+        public async Task<IActionResult> DeleteFolder(int id)
         {
-            var folder = _folderManager.GetListByID(id);
-            if (folder == null)
+            if (_genericService.GetListByID(id)!=null)
             {
-                return NotFound();
+                await _genericService.Delete(id);
+                return Ok();
             }
-
-            using (var context = new FileOrbisContext())
-            {
-                context.FolderInfo.Remove(folder);
-                context.SaveChanges();
-            }
-
-            return NoContent();
+            return NotFound();
         }
     }
 }

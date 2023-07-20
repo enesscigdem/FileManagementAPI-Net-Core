@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 
 namespace FileOrbis.BusinessLayer.Abstract
 {
-    public interface IGenericService <T>
+    public interface IGenericService<T>
     {
-        List<T> GetListAll();
-        void GetListByID(int id);
+        Task<List<T>> GetListAll();
+        Task<T> GetListByID(int id);
+        Task<T> Create(T t);
+        Task Delete(int id);
     }
 }

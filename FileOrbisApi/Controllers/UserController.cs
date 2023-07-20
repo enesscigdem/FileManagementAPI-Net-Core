@@ -1,4 +1,5 @@
-﻿using FileOrbis.BusinessLayer.Concrete;
+﻿using FileOrbis.BusinessLayer.Abstract;
+using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
@@ -11,24 +12,26 @@ namespace FileOrbisApi.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly GenericManager<UserInfo> _userManager;
-        public UserController(IGenericDal<UserInfo> userDal)
+        private IGenericService<UserInfo> _genericService;
+
+        public UserController(IGenericService<UserInfo> genericService)
         {
-            _userManager = new GenericManager<UserInfo>(userDal);
+            _genericService = genericService;
         }
+
         [HttpGet]
         [Route("[action]")]
-        public IActionResult GetAllUsers()
+        public async Task<IActionResult> GetAllUsers()
         {
-            var userList = _userManager.GetListAll();
+            var userList = await _genericService.GetListAll();
             return Ok(userList);
         }
 
         [HttpGet]
         [Route("[action]/{id}")]
-        public IActionResult GetUserByID(int id)
+        public async Task<IActionResult> GetUserByID(int id)
         {
-            var user = _userManager.GetListByID(id);
+            var user = await _genericService.GetListByID(id);
             if (user == null)
             {
                 return NotFound();
@@ -38,38 +41,21 @@ namespace FileOrbisApi.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        public IActionResult CreateUser([FromBody] UserInfo user)
+        public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            using (var context = new FileOrbisContext())
-            {
-                context.UserInfo.Add(user);
-                context.SaveChanges();
-            }
-
-            return CreatedAtAction(nameof(GetAllUsers), new { id = user.UserID }, user);
+            var createUser = await _genericService.Create(user);
+            return CreatedAtAction("GetAllUsers", new { id = user.UserID }, createUser);
         }
         [HttpDelete]
         [Route("[action]/{id}")]
-        public IActionResult DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = _userManager.GetListByID(id);
-            if (user == null)
+            if (_genericService.GetListByID(id) != null)
             {
-                return NotFound();
+                await _genericService.Delete(id);
+                return Ok();
             }
-
-            using (var context = new FileOrbisContext())
-            {
-                context.UserInfo.Remove(user);
-                context.SaveChanges();
-            }
-
-            return NoContent();
+            return NotFound();
         }
     }
 }

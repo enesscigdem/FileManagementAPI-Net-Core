@@ -8,9 +8,9 @@ namespace FileOrbis.DataAccessLayer.Abstract
 {
     public interface IGenericDal<T> where T : class
     {
-        List<T> GetListAll();
-        T GetListByID(int id);
+        Task<List<T>> GetListAll();
+        Task<T> GetListByID(int id);
         Task<T> Create(T t);
-        Task<T> Delete(T t);
+        Task Delete(int id);
     }
 }

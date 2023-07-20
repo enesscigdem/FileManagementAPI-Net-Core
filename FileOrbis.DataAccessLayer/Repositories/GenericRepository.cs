@@ -1,5 +1,6 @@
 ﻿using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,16 +18,28 @@ namespace FileOrbis.DataAccessLayer.Repositories
             _context = context;
         }
 
-        public List<T> GetListAll()
+        public async Task<T> Create(T t)
         {
-            using var c = new FileOrbisContext();
-            return _context.Set<T>().ToList();
+            await _context.Set<T>().AddAsync(t);
+            await _context.SaveChangesAsync();
+            return t;
         }
 
-        public T GetListByID(int id)
+        public async Task Delete(int id)
         {
-            using var c = new FileOrbisContext();
-            return _context.Set< T>().Find(id);
+            var item = await GetListByID(id);
+            _context.Remove(item);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<T>> GetListAll()
+        {
+            return await _context.Set<T>().ToListAsync();
+        }
+
+        public async Task<T> GetListByID(int id)
+        {
+            return await _context.Set<T>().FindAsync(id);
         }
     }
 }

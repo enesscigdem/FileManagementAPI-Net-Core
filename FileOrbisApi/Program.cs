@@ -17,7 +17,9 @@ builder.Services.AddDbContext<FileOrbisContext>();
 
 
 // Repository ve Servis eşleştirmelerini ekleyin
+builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericManager<>));
 builder.Services.AddScoped(typeof(IGenericDal<>), typeof(GenericRepository<>));
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

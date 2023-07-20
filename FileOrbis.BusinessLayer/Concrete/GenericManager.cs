@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FileOrbis.BusinessLayer.Concrete
 {
-    public class GenericManager<T> where T : class
+    public class GenericManager<T> : IGenericService<T> where T : class
     {
         IGenericDal<T> _genericDal;
 
@@ -17,14 +17,24 @@ namespace FileOrbis.BusinessLayer.Concrete
             _genericDal = genericDal;
         }
 
-        public List<T> GetListAll()
+        public async Task<T> Create(T t)
         {
-            return _genericDal.GetListAll();
+            return await _genericDal.Create(t);
         }
 
-        public T GetListByID(int id)
+        public async Task Delete(int id)
         {
-            return _genericDal.GetListByID(id);
+            await _genericDal.Delete(id);
+        }
+
+        public async Task<List<T>> GetListAll()
+        {
+            return await _genericDal.GetListAll();
+        }
+
+        public async Task<T> GetListByID(int id)
+        {
+            return await _genericDal.GetListByID(id);
         }
     }
 }
