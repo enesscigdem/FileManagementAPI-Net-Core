@@ -10,5 +10,7 @@ namespace FileOrbis.DataAccessLayer.Abstract
     {
         List<T> GetListAll();
         T GetListByID(int id);
+        Task<T> Create(T t);
+        Task<T> Delete(T t);
     }
 }

@@ -16,9 +16,7 @@ namespace FileOrbis.DataAccessLayer.Context
 
         }
         public DbSet<UserInfo> UserInfo { get; set; }
-        public DbSet<FileItem> FileItems { get; set; }
-
-        //public DbSet<FileInfos> FileInfo{ get; set; }
-        //public DbSet<FolderInfo> FolderInfo{ get; set; }
+        public DbSet<FileInfos> FileInfo { get; set; }
+        public DbSet<FolderInfo> FolderInfo { get; set; }
     }
 }

@@ -21,7 +21,6 @@ namespace FileOrbis.EntityLayer.Concrete
         [Required]
         public string Password { get; set; }
 
-        //public virtual ICollection<FolderInfo>? Folders { get; set; }
-
+        public virtual List<FolderInfo>? Folders { get; set; }
     }
 }
