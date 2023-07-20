@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FileOrbis.DataAccessLayer.Abstract
 {
-    public interface IGenericDal<T> where T : class
+    public interface IGenericDal<T>
     {
         Task<List<T>> GetListAll();
         Task<T> GetListByID(int id);

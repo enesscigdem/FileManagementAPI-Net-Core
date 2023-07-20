@@ -50,7 +50,7 @@ namespace FileOrbisApi.Controllers
         [Route("[action]/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            if (_genericService.GetListByID(id) != null)
+            if (await _genericService.GetListByID(id) != null) 
             {
                 await _genericService.Delete(id);
                 return Ok();

@@ -34,7 +34,11 @@ namespace FileOrbis.BusinessLayer.Concrete
 
         public async Task<T> GetListByID(int id)
         {
-            return await _genericDal.GetListByID(id);
+            if (id > 0)
+            {
+                return await _genericDal.GetListByID(id);
+            }
+            throw new Exception("ID can not be less than 1");
         }
     }
 }
