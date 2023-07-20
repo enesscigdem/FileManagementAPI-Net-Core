@@ -3,6 +3,7 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
+using FileOrbisApi.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -46,6 +47,25 @@ namespace FileOrbisApi.Controllers
             var createUser = await _genericService.Create(user);
             return CreatedAtAction("GetAllUsers", new { id = user.UserID }, createUser);
         }
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        {
+            var user = await _genericService.GetListAll();
+
+            var username = model.Username;
+            var password = model.Password;
+
+            var authenticatedUser = user.FirstOrDefault(u => u.UserName == username && u.Password == password);
+
+            if (authenticatedUser != null)
+            {
+                return Ok(new { Message = "Giriş başarılı!", UserID = authenticatedUser.UserID });
+            }
+
+            return BadRequest(new { Message = "Kullanıcı adı veya şifre hatalı!" });
+        }
+
         [HttpDelete]
         [Route("[action]/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
