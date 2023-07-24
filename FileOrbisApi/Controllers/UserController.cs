@@ -6,6 +6,10 @@ using FileOrbis.EntityLayer.Concrete;
 using FileOrbisApi.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using FileOrbisApi.JWT;
+using Microsoft.AspNetCore.Authorization;
+using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace FileOrbisApi.Controllers
 {
@@ -22,6 +26,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpGet]
         [Route("[action]")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetAllUsers()
         {
             var userList = await _genericService.GetListAll();
@@ -30,6 +35,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpGet]
         [Route("[action]/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetUserByID(int id)
         {
             var user = await _genericService.GetListByID(id);
@@ -42,6 +48,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpPost]
         [Route("[action]")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
             var createUser = await _genericService.Create(user);
@@ -52,7 +59,6 @@ namespace FileOrbisApi.Controllers
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             var user = await _genericService.GetListAll();
-
             var username = model.Username;
             var password = model.Password;
 
@@ -60,7 +66,11 @@ namespace FileOrbisApi.Controllers
 
             if (authenticatedUser != null)
             {
-                return Ok(new { Message = "Giriş başarılı!", UserID = authenticatedUser.UserID });
+                var key = "fileorbisproject";
+                CreateToken createToken = new CreateToken();
+                var token = createToken.GenerateJwtToken(authenticatedUser, key);
+
+                return Ok(new { Message = "Giriş başarılı!", Token = token, UserID = authenticatedUser.UserID });
             }
 
             return BadRequest(new { Message = "Kullanıcı adı veya şifre hatalı!" });
@@ -68,6 +78,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpDelete]
         [Route("[action]/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> DeleteUser(int id)
         {
             if (await _genericService.GetListByID(id) != null) 
