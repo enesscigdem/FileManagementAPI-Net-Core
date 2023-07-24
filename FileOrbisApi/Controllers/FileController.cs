@@ -59,5 +59,12 @@ namespace FileOrbisApi.Controllers
             }
             return NotFound();
         }
+        [HttpGet]
+        [Route("[action]/{folderID}")]
+        public async Task<IActionResult> GetFilesByFolderID(int folderID)
+        {
+            var fileList = await _genericService.GetFilesByFolderID(folderID);
+            return Ok(fileList);
+        }
     }
 }

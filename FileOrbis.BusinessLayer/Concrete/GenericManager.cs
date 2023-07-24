@@ -1,5 +1,6 @@
 ﻿using FileOrbis.BusinessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Abstract;
+using FileOrbis.EntityLayer.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,10 @@ namespace FileOrbis.BusinessLayer.Concrete
         {
             _genericDal = genericDal;
         }
-
+        public async Task<List<FolderInfo>> GetFoldersByUserID(int userID)
+        {
+            return await _genericDal.GetFoldersByUserID(userID);
+        }
         public async Task<T> Create(T t)
         {
             return await _genericDal.Create(t);
@@ -39,6 +43,11 @@ namespace FileOrbis.BusinessLayer.Concrete
                 return await _genericDal.GetListByID(id);
             }
             throw new Exception("ID can not be less than 1");
+        }
+
+        public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)
+        {
+            return await _genericDal.GetFilesByFolderID(folderID);
         }
     }
 }

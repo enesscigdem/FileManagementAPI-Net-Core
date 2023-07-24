@@ -1,5 +1,6 @@
 ﻿using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
+using FileOrbis.EntityLayer.Concrete;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,18 @@ namespace FileOrbis.DataAccessLayer.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<List<FolderInfo>> GetFoldersByUserID(int userID)
+        {
+            return await _context.FolderInfo
+                .Where(f => f.UserID == userID)
+                .ToListAsync();
+        }
+        public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)
+        {
+            return await _context.FileInfo
+                .Where(f => f.FolderID == folderID)
+                .ToListAsync();
+        }
         public async Task<List<T>> GetListAll()
         {
             return await _context.Set<T>().ToListAsync();

@@ -58,5 +58,12 @@ namespace FileOrbisApi.Controllers
             }
             return NotFound();
         }
+        [HttpGet]
+        [Route("[action]/{userID}")]
+        public async Task<IActionResult> GetFoldersByUserID(int userID)
+        {
+            var folderList = await _genericService.GetFoldersByUserID(userID);
+            return Ok(folderList);
+        }
     }
 }

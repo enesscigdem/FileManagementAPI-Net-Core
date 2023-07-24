@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FileOrbis.EntityLayer.Concrete;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,8 @@ namespace FileOrbis.DataAccessLayer.Abstract
         Task<T> GetListByID(int id);
         Task<T> Create(T t);
         Task Delete(int id);
+        Task<List<FolderInfo>> GetFoldersByUserID(int userID);
+        Task<List<FileInfos>> GetFilesByFolderID(int folderID);
+
     }
 }
