@@ -54,5 +54,12 @@ namespace FileOrbis.DataAccessLayer.Repositories
         {
             return await _context.Set<T>().FindAsync(id);
         }
+
+        public async Task<T> Update(T t)
+        {
+            _context.Set<T>().Update(t);
+            await _context.SaveChangesAsync();
+            return t;
+        }
     }
 }

@@ -10,7 +10,9 @@ using FileOrbisApi.JWT;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-
+using System.Net.Mail;
+using System.Net;
+using FileOrbisApi.PassGenerate;
 namespace FileOrbisApi.Controllers
 {
     [Route("api/[controller]")]
@@ -18,7 +20,6 @@ namespace FileOrbisApi.Controllers
     public class UserController : ControllerBase
     {
         private IGenericService<UserInfo> _genericService;
-
         public UserController(IGenericService<UserInfo> genericService)
         {
             _genericService = genericService;
@@ -70,15 +71,14 @@ namespace FileOrbisApi.Controllers
                 CreateToken createToken = new CreateToken();
                 var token = createToken.GenerateJwtToken(authenticatedUser, key);
 
-                return Ok(new { Message = "Giriş başarılı!", Token = token, UserID = authenticatedUser.UserID });
+                return Ok(new { Message = "Login successful!", Token = token, UserID = authenticatedUser.UserID });
             }
 
-            return BadRequest(new { Message = "Kullanıcı adı veya şifre hatalı!" });
+            return BadRequest(new { Message = "Username or password is wrong!" });
         }
 
         [HttpDelete]
         [Route("[action]/{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [Authorize]
         public async Task<IActionResult> DeleteUser(int id)
         {
@@ -89,5 +89,44 @@ namespace FileOrbisApi.Controllers
             }
             return NotFound();
         }
+
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordModel model)
+        {
+            var user = await _genericService.GetListAll();
+            var username = model.Username;
+
+            var validUsername = user.FirstOrDefault(u => u.UserName == username);
+            if (validUsername != null)
+            {
+                var userEmail = model.Email;
+                string newPassword = PasswordGenerate.GenerateStrongPassword();
+                try
+                {
+                    var mail = new MailMessage();
+                    var smtpServer = new SmtpClient("smtp.office365.com", 587);
+                    smtpServer.Credentials = new NetworkCredential("Enes.staj@hotmail.com", "Enes123*");
+                    smtpServer.EnableSsl = true;
+                    mail.From = new MailAddress("Enes.staj@hotmail.com");
+                    mail.To.Add(userEmail);
+                    mail.Subject = "New Password";
+                    mail.Body = $"Your new password is: {newPassword}";
+                    smtpServer.Send(mail);
+                    validUsername.Password = newPassword;
+                    await _genericService.Update(validUsername);
+                    return Ok(new { Message = "New password sent successfully to the user's email address." });
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+                }
+            }
+            else
+            {
+                return BadRequest(new { Message = "No such user found!" });
+            }
+        }
+
     }
 }

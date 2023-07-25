@@ -19,7 +19,7 @@ namespace FileOrbisApi.JWT
                 audience: "http://localhost",
                 claims: new[] { new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()) },
                 notBefore: DateTime.Now,
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.Now.AddYears(2),
                 signingCredentials: credentials
             );
 

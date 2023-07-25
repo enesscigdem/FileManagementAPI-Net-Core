@@ -49,5 +49,10 @@ namespace FileOrbis.BusinessLayer.Concrete
         {
             return await _genericDal.GetFilesByFolderID(folderID);
         }
+
+        public async Task<T> Update(T t)
+        {
+            return await _genericDal.Update(t);
+        }
     }
 }
