@@ -26,7 +26,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpGet]
         [Route("[action]")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
         public async Task<IActionResult> GetAllUsers()
         {
             var userList = await _genericService.GetListAll();
@@ -35,7 +35,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpGet]
         [Route("[action]/{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
         public async Task<IActionResult> GetUserByID(int id)
         {
             var user = await _genericService.GetListByID(id);
@@ -48,7 +48,7 @@ namespace FileOrbisApi.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
         public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
             var createUser = await _genericService.Create(user);
@@ -79,9 +79,10 @@ namespace FileOrbisApi.Controllers
         [HttpDelete]
         [Route("[action]/{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            if (await _genericService.GetListByID(id) != null) 
+            if (await _genericService.GetListByID(id) != null)
             {
                 await _genericService.Delete(id);
                 return Ok();

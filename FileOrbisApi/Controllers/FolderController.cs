@@ -3,6 +3,7 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,7 @@ namespace FileOrbisApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class FolderController : ControllerBase
     {
         private IGenericService<FolderInfo> _genericService;
