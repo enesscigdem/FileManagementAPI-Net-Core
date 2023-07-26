@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
-
+using System.IO;
 namespace FileOrbisApi.Controllers
 {
     [Route("api/[controller]")]
@@ -46,6 +46,10 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> CreateFile([FromBody] FileInfos file)
         {
+            string filePath;
+            filePath = Path.Combine(file.FilePath, file.FileName);
+
+            System.IO.File.Create(filePath);
             var createFile = await _genericService.Create(file);
             return CreatedAtAction("GetAllFiles", new { id = file.FileID }, createFile);
         }

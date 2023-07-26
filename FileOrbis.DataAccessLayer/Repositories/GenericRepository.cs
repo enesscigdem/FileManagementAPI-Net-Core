@@ -36,7 +36,7 @@ namespace FileOrbis.DataAccessLayer.Repositories
         public async Task<List<FolderInfo>> GetFoldersByUserID(int userID)
         {
             return await _context.FolderInfo
-                .Where(f => f.UserID == userID)
+                .Where(f => f.UserID == userID && f.ParentFolderID == null)
                 .ToListAsync();
         }
         public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)

@@ -4,6 +4,7 @@ using FileOrbis.DataAccessLayer.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FileOrbis.DataAccessLayer.Migrations
 {
     [DbContext(typeof(FileOrbisContext))]
-    partial class ContextModelSnapshot : ModelSnapshot
+    [Migration("20230726100825_mig7")]
+    partial class mig7
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,6 +84,8 @@ namespace FileOrbis.DataAccessLayer.Migrations
 
                     b.HasKey("FolderID");
 
+                    b.HasIndex("ParentFolderID");
+
                     b.HasIndex("UserID");
 
                     b.ToTable("FolderInfo");
@@ -122,17 +127,25 @@ namespace FileOrbis.DataAccessLayer.Migrations
 
             modelBuilder.Entity("FileOrbis.EntityLayer.Concrete.FolderInfo", b =>
                 {
+                    b.HasOne("FileOrbis.EntityLayer.Concrete.FolderInfo", "ParentFolder")
+                        .WithMany("ChildFolders")
+                        .HasForeignKey("ParentFolderID");
+
                     b.HasOne("FileOrbis.EntityLayer.Concrete.UserInfo", "User")
                         .WithMany("Folders")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("ParentFolder");
+
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("FileOrbis.EntityLayer.Concrete.FolderInfo", b =>
                 {
+                    b.Navigation("ChildFolders");
+
                     b.Navigation("Files");
                 });
 

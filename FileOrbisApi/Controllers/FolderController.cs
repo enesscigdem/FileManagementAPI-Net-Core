@@ -7,6 +7,9 @@ using FileOrbisApi.Folder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace FileOrbisApi.Controllers
 {
@@ -16,10 +19,12 @@ namespace FileOrbisApi.Controllers
     public class FolderController : ControllerBase
     {
         private IGenericService<FolderInfo> _genericService;
+        private readonly FileOrbisContext _context;
 
-        public FolderController(IGenericService<FolderInfo> genericService)
+        public FolderController(IGenericService<FolderInfo> genericService, FileOrbisContext context)
         {
             _genericService = genericService;
+            _context = context;
         }
 
         [HttpGet]
@@ -46,8 +51,25 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> CreateFolder([FromBody] FolderInfo folder)
         {
-            var createFolder = await _genericService.Create(folder);
-            return CreatedAtAction("GetAllFolders", new { id = folder.FolderID }, createFolder);
+            try
+            {
+                if (folder == null || string.IsNullOrWhiteSpace(folder.FolderName) || folder.UserID == 0)
+                {
+                    return BadRequest("Invalid folder data.");
+                }
+
+                string folderPath;
+                folderPath = Path.Combine(folder.FolderPath, folder.FolderName);
+
+                Directory.CreateDirectory(folderPath);
+                var createFolder = await _genericService.Create(folder);
+
+                return CreatedAtAction("GetAllFolders", new { id = createFolder.FolderID }, createFolder);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating the folder: " + ex.Message);
+            }
         }
 
         [HttpDelete]
@@ -68,32 +90,15 @@ namespace FileOrbisApi.Controllers
             var folderList = await _genericService.GetFoldersByUserID(userID);
             return Ok(folderList);
         }
-        [Route("[action]")]
-        [HttpPost]
-        public IActionResult CreateEmptyFolder([FromBody] CreateFolder createFolder)
+        [HttpGet]
+        [Route("[action]/{parentFolderID}")]
+        public async Task<IActionResult> GetFoldersByParentFolderID(int parentFolderID)
         {
-            try
-            {
-                if (createFolder == null || string.IsNullOrWhiteSpace(createFolder.FolderPath) || string.IsNullOrWhiteSpace(createFolder.FolderName))
-                {
-                    return BadRequest("Invalid folder path or folder name.");
-                }
+            var subfolders = await _context.FolderInfo
+                .Where(f => f.ParentFolderID == parentFolderID && f.ParentFolderID!=null)
+                .ToListAsync();
 
-                string newPath = Path.Combine(createFolder.FolderPath, createFolder.FolderName);
-
-                if (Directory.Exists(newPath))
-                {
-                    return BadRequest("This folder already exists.");
-                }
-
-                Directory.CreateDirectory(newPath);
-
-                return Ok("Empty folder created successfully: " + newPath);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred: {ex.Message}");
-            }
+            return Ok(subfolders);
         }
     }
 }

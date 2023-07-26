@@ -49,10 +49,10 @@ namespace FileOrbisApi.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        [Authorize]
         public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
             var createUser = await _genericService.Create(user);
+            Directory.CreateDirectory("C:\\server\\" + createUser.UserName);
             return CreatedAtAction("GetAllUsers", new { id = user.UserID }, createUser);
         }
         [HttpPost]
