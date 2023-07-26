@@ -12,7 +12,7 @@ namespace FileOrbis.DataAccessLayer.Context
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("server=FILEORBIS;database=FileOrbisDb;integrated security=true; TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("server=FILEORBIS\\SQLEXPRESS;database=FileOrbisDb;integrated security=true; TrustServerCertificate=True;");
 
         }
         public DbSet<UserInfo> UserInfo { get; set; }

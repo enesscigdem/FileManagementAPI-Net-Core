@@ -3,6 +3,7 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
+using FileOrbisApi.Folder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -53,7 +54,7 @@ namespace FileOrbisApi.Controllers
         [Route("[action]/{id}")]
         public async Task<IActionResult> DeleteFolder(int id)
         {
-            if (await _genericService.GetListByID(id)!=null)
+            if (await _genericService.GetListByID(id) != null)
             {
                 await _genericService.Delete(id);
                 return Ok();
@@ -67,5 +68,33 @@ namespace FileOrbisApi.Controllers
             var folderList = await _genericService.GetFoldersByUserID(userID);
             return Ok(folderList);
         }
+        [Route("[action]")]
+        [HttpPost]
+        public IActionResult CreateEmptyFolder([FromBody] CreateFolder createFolder)
+        {
+            try
+            {
+                if (createFolder == null || string.IsNullOrWhiteSpace(createFolder.FolderPath) || string.IsNullOrWhiteSpace(createFolder.FolderName))
+                {
+                    return BadRequest("Invalid folder path or folder name.");
+                }
+
+                string newPath = Path.Combine(createFolder.FolderPath, createFolder.FolderName);
+
+                if (Directory.Exists(newPath))
+                {
+                    return BadRequest("This folder already exists.");
+                }
+
+                Directory.CreateDirectory(newPath);
+
+                return Ok("Empty folder created successfully: " + newPath);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
     }
 }
+
