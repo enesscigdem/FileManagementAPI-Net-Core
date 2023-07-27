@@ -54,5 +54,10 @@ namespace FileOrbis.BusinessLayer.Concrete
         {
             return await _genericDal.Update(t);
         }
+
+        public async Task DeleteAll()
+        {
+            await _genericDal.DeleteAll();
+        }
     }
 }

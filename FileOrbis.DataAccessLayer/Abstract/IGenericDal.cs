@@ -14,6 +14,7 @@ namespace FileOrbis.DataAccessLayer.Abstract
         Task<T> Update(T t);
         Task<T> Create(T t);
         Task Delete(int id);
+        Task DeleteAll();
         Task<List<FolderInfo>> GetFoldersByUserID(int userID);
         Task<List<FileInfos>> GetFilesByFolderID(int folderID);
 

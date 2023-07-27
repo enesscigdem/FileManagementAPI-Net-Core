@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Net.Mail;
 using System.Net;
 using FileOrbisApi.PassGenerate;
+using Microsoft.EntityFrameworkCore;
+
 namespace FileOrbisApi.Controllers
 {
     [Route("api/[controller]")]
@@ -128,5 +130,19 @@ namespace FileOrbisApi.Controllers
             }
         }
 
+        [HttpDelete]
+        [Route("[action]")]
+        public async Task<IActionResult> DeleteAllUsers()
+        {
+            try
+            {
+                await _genericService.DeleteAll();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+            }
+        }
     }
 }

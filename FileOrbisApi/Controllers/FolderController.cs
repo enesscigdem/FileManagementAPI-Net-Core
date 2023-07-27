@@ -51,19 +51,29 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> CreateFolder([FromBody] FolderInfo folder)
         {
+            string folderPath;
             try
             {
+                var user =  _context.UserInfo.FirstOrDefault(x=>x.UserID == folder.UserID);
+            
                 if (folder == null || string.IsNullOrWhiteSpace(folder.FolderName) || folder.UserID == 0)
-                {
                     return BadRequest("Invalid folder data.");
+
+                if (folder.ParentFolderID == null)
+                {
+                    folderPath = Path.Combine("C:\\server\\", (user.UserName), folder.FolderName);
+                    folder.FolderPath = folderPath;
+                }
+                else
+                {
+                    var parentFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folder.ParentFolderID);    
+                    folderPath = Path.Combine(parentFolder.FolderPath, folder.FolderName);
+                    folder.FolderPath = folderPath;
                 }
 
-                string folderPath;
-                folderPath = Path.Combine(folder.FolderPath, folder.FolderName);
-
                 Directory.CreateDirectory(folderPath);
-                var createFolder = await _genericService.Create(folder);
 
+                var createFolder = await _genericService.Create(folder);
                 return CreatedAtAction("GetAllFolders", new { id = createFolder.FolderID }, createFolder);
             }
             catch (Exception ex)
@@ -95,10 +105,39 @@ namespace FileOrbisApi.Controllers
         public async Task<IActionResult> GetFoldersByParentFolderID(int parentFolderID)
         {
             var subfolders = await _context.FolderInfo
-                .Where(f => f.ParentFolderID == parentFolderID && f.ParentFolderID!=null)
+                .Where(f => f.ParentFolderID == parentFolderID && f.ParentFolderID != null)
                 .ToListAsync();
 
             return Ok(subfolders);
+        }
+
+        [HttpDelete]
+        [Route("[action]")]
+        public async Task<IActionResult> DeleteAllFolders()
+        {
+            try
+            {
+                await _genericService.DeleteAll();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+            }
+        }
+        [HttpPut]
+        [Route("[action]")]
+        public async Task<IActionResult> RenameFolder([FromBody] FolderInfo folder)
+        {
+            var existingFolder = await _genericService.GetListByID(folder.FolderID);
+            if (existingFolder != null)
+            {
+                existingFolder.FolderName = folder.FolderName;
+                await _genericService.Update(existingFolder);
+                return Ok(existingFolder);
+            }
+
+            return NotFound();
         }
     }
 }

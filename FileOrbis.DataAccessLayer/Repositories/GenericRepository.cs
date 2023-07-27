@@ -61,5 +61,12 @@ namespace FileOrbis.DataAccessLayer.Repositories
             await _context.SaveChangesAsync();
             return t;
         }
+
+        public async Task DeleteAll()
+        {
+            var allFolders = await _context.Set<T>().ToListAsync();
+            _context.Set<T>().RemoveRange(allFolders);
+            await _context.SaveChangesAsync();
+        }
     }
 }

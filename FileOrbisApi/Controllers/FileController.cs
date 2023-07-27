@@ -72,5 +72,20 @@ namespace FileOrbisApi.Controllers
             var fileList = await _genericService.GetFilesByFolderID(folderID);
             return Ok(fileList);
         }
+
+        [HttpDelete]
+        [Route("[action]")]
+        public async Task<IActionResult> DeleteAllFiles()
+        {
+            try
+            {
+                await _genericService.DeleteAll();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+            }
+        }
     }
 }
