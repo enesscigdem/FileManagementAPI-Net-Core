@@ -13,8 +13,8 @@ namespace FileOrbis.EntityLayer.Concrete
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int FolderID { get; set; }
         public string FolderName { get; set; }
-        public string FolderPath { get; set; }
-        public DateTime FolderCreatedDate { get; set; }
+        public string Path { get; set; }
+        public DateTime CreationDate { get; set; }
         public virtual ICollection<FileInfos>? Files { get; set; } 
         public int UserID { get; set; }
         public virtual UserInfo? User { get; set; }

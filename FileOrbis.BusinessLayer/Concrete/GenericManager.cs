@@ -38,11 +38,7 @@ namespace FileOrbis.BusinessLayer.Concrete
 
         public async Task<T> GetListByID(int id)
         {
-            if (id > 0)
-            {
-                return await _genericDal.GetListByID(id);
-            }
-            throw new Exception("ID can not be less than 1");
+            return await _genericDal.GetListByID(id);
         }
 
         public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)

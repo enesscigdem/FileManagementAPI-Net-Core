@@ -54,21 +54,21 @@ namespace FileOrbisApi.Controllers
             string folderPath;
             try
             {
-                var user =  _context.UserInfo.FirstOrDefault(x=>x.UserID == folder.UserID);
-            
+                var user = _context.UserInfo.FirstOrDefault(x => x.UserID == folder.UserID);
+
                 if (folder == null || string.IsNullOrWhiteSpace(folder.FolderName) || folder.UserID == 0)
                     return BadRequest("Invalid folder data.");
 
                 if (folder.ParentFolderID == null)
                 {
                     folderPath = Path.Combine("C:\\server\\", (user.UserName), folder.FolderName);
-                    folder.FolderPath = folderPath;
+                    folder.Path = folderPath;
                 }
                 else
                 {
-                    var parentFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folder.ParentFolderID);    
-                    folderPath = Path.Combine(parentFolder.FolderPath, folder.FolderName);
-                    folder.FolderPath = folderPath;
+                    var parentFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folder.ParentFolderID);
+                    folderPath = Path.Combine(parentFolder.Path, folder.FolderName);
+                    folder.Path = folderPath;
                 }
 
                 Directory.CreateDirectory(folderPath);
@@ -115,15 +115,9 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> DeleteAllFolders()
         {
-            try
-            {
-                await _genericService.DeleteAll();
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
-            }
+            await _genericService.DeleteAll();
+            return Ok();
+
         }
         [HttpPut]
         [Route("[action]")]
@@ -133,12 +127,29 @@ namespace FileOrbisApi.Controllers
             if (existingFolder != null)
             {
                 existingFolder.FolderName = folder.FolderName;
+                string newPath = Path.Combine(Path.GetDirectoryName(existingFolder.Path), existingFolder.FolderName);
+                MoveFolder(existingFolder.Path, newPath);
+                existingFolder.Path = newPath;
                 await _genericService.Update(existingFolder);
                 return Ok(existingFolder);
             }
 
             return NotFound();
         }
+        static void MoveFolder(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                System.IO.File.Move(file, destFile);
+            }
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                MoveFolder(subDir, destSubDir);
+            }
+            Directory.Delete(sourceDir, true);
+        }
     }
 }
-

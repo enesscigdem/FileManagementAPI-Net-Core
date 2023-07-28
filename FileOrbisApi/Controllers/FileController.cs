@@ -3,6 +3,7 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
+using FileOrbisApi.Folder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +17,12 @@ namespace FileOrbisApi.Controllers
     public class FileController : ControllerBase
     {
         private IGenericService<FileInfos> _genericService;
+        private readonly FileOrbisContext _context;
 
-        public FileController(IGenericService<FileInfos> genericService)
+        public FileController(IGenericService<FileInfos> genericService, FileOrbisContext context)
         {
             _genericService = genericService;
+            _context = context;
         }
 
         [HttpGet]
@@ -46,12 +49,54 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> CreateFile([FromBody] FileInfos file)
         {
-            string filePath;
-            filePath = Path.Combine(file.FilePath, file.FileName);
+            // nasıl upload ederim
+            // file olarak gönder
+            try
+            {
+                if (file.FolderID == 0)  // path ön yüzden gelecek.
+                    System.IO.File.Create(file.Path);
+                else
+                {
+                    var existingFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == file.FolderID);
+                    string newPath = Path.Combine(existingFolder.Path, file.FileName);
+                    System.IO.File.Copy(file.Path,newPath);
+                    file.Path = newPath;
+                }
+                var createFile = await _genericService.Create(file);
 
-            System.IO.File.Create(filePath);
-            var createFile = await _genericService.Create(file);
-            return CreatedAtAction("GetAllFiles", new { id = file.FileID }, createFile);
+                return CreatedAtAction("GetAllFiles", new { id = createFile.FileID }, createFile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating the folder: " + ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> UploadFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file received or file is empty.");
+            }
+
+            try
+            {
+                string uploadPath = @"C:\server\enescigdem";
+                string filePath = Path.Combine(uploadPath, file.FileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                return Ok("File uploaded successfully!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while uploading the file: " + ex.Message);
+            }
         }
 
         [HttpDelete]
