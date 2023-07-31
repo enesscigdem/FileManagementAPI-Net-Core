@@ -4,6 +4,7 @@ using FileOrbis.DataAccessLayer.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FileOrbis.DataAccessLayer.Migrations
 {
     [DbContext(typeof(FileOrbisContext))]
-    partial class ContextModelSnapshot : ModelSnapshot
+    [Migration("20230731100339_mig12")]
+    partial class mig12
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,6 +52,8 @@ namespace FileOrbis.DataAccessLayer.Migrations
 
                     b.HasKey("FileID");
 
+                    b.HasIndex("FolderID");
+
                     b.ToTable("FileInfo");
                 });
 
@@ -79,6 +84,8 @@ namespace FileOrbis.DataAccessLayer.Migrations
 
                     b.HasKey("FolderID");
 
+                    b.HasIndex("UserID");
+
                     b.ToTable("FolderInfo");
                 });
 
@@ -106,6 +113,36 @@ namespace FileOrbis.DataAccessLayer.Migrations
                     b.HasKey("UserID");
 
                     b.ToTable("UserInfo");
+                });
+
+            modelBuilder.Entity("FileOrbis.EntityLayer.Concrete.FileInfos", b =>
+                {
+                    b.HasOne("FileOrbis.EntityLayer.Concrete.FolderInfo", "Folder")
+                        .WithMany("Files")
+                        .HasForeignKey("FolderID");
+
+                    b.Navigation("Folder");
+                });
+
+            modelBuilder.Entity("FileOrbis.EntityLayer.Concrete.FolderInfo", b =>
+                {
+                    b.HasOne("FileOrbis.EntityLayer.Concrete.UserInfo", "User")
+                        .WithMany("Folders")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FileOrbis.EntityLayer.Concrete.FolderInfo", b =>
+                {
+                    b.Navigation("Files");
+                });
+
+            modelBuilder.Entity("FileOrbis.EntityLayer.Concrete.UserInfo", b =>
+                {
+                    b.Navigation("Folders");
                 });
 #pragma warning restore 612, 618
         }

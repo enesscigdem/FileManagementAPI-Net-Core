@@ -22,11 +22,12 @@ namespace FileOrbisApi.Controllers
     public class UserController : ControllerBase
     {
         private IGenericService<UserInfo> _genericService;
-        public UserController(IGenericService<UserInfo> genericService)
+        private IGenericService<FolderInfo> _genericServiceFolder;
+        public UserController(IGenericService<UserInfo> genericService, IGenericService<FolderInfo> genericServiceFolder)
         {
             _genericService = genericService;
+            _genericServiceFolder = genericServiceFolder;
         }
-
         [HttpGet]
         [Route("[action]")]
         [Authorize]
@@ -54,6 +55,14 @@ namespace FileOrbisApi.Controllers
         public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
             var createUser = await _genericService.Create(user);
+            FolderInfo folderInfo= new FolderInfo
+            {
+                FolderName = createUser.UserName,
+                Path = Path.Combine("C:\\server\\",createUser.UserName),
+                CreationDate = DateTime.Now,
+                UserID = createUser.UserID,
+            };
+            var createFolder = await _genericServiceFolder.Create(folderInfo);
             Directory.CreateDirectory("C:\\server\\" + createUser.UserName);
             return CreatedAtAction("GetAllUsers", new { id = user.UserID }, createUser);
         }
@@ -103,25 +112,27 @@ namespace FileOrbisApi.Controllers
             if (validUsername != null)
             {
                 var userEmail = model.Email;
-                string newPassword = PasswordGenerate.GenerateStrongPassword();
+                string resetToken = GenerateResetToken();
+
                 try
                 {
                     var mail = new MailMessage();
                     var smtpServer = new SmtpClient("smtp.office365.com", 587);
-                    smtpServer.Credentials = new NetworkCredential("Enes.staj@hotmail.com", "Enes123*");
+                    smtpServer.Credentials = new NetworkCredential("Enes.Staj@hotmail.com", "Enes123*");
                     smtpServer.EnableSsl = true;
                     mail.From = new MailAddress("Enes.staj@hotmail.com");
                     mail.To.Add(userEmail);
-                    mail.Subject = "New Password";
-                    mail.Body = $"Your new password is: {newPassword}";
+                    mail.Subject = "Password Reset";
+                    mail.Body = $"Click the link below to reset your password: http://localhost:5173/reset-password?token={resetToken}";
                     smtpServer.Send(mail);
-                    validUsername.Password = newPassword;
+                    validUsername.ResetToken = resetToken;
                     await _genericService.Update(validUsername);
-                    return Ok(new { Message = "New password sent successfully to the user's email address." });
+
+                    return Ok(new { Message = "An email with instructions has been sent to the user's email address." });
                 }
                 catch (Exception ex)
                 {
-                    return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the reset email." });
                 }
             }
             else
@@ -129,6 +140,33 @@ namespace FileOrbisApi.Controllers
                 return BadRequest(new { Message = "No such user found!" });
             }
         }
+        private string GenerateResetToken()
+        {
+            return Guid.NewGuid().ToString();
+        }
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordModel model)
+        {
+            var user = await _genericService.GetListAll();
+            var username = model.Username;
+            var resetToken = model.ResetToken;
+
+            var validUsername = user.FirstOrDefault(u => u.UserName == username && u.ResetToken == resetToken); // Add the reset token check
+            if (validUsername != null)
+            {
+                validUsername.Password = model.NewPassword;
+                validUsername.ResetToken = null;
+                await _genericService.Update(validUsername);
+
+                return Ok(new { Message = "Password has been successfully reset." });
+            }
+            else
+            {
+                return BadRequest(new { Message = "Invalid reset token or user not found!" });
+            }
+        }
+
 
         [HttpDelete]
         [Route("[action]")]

@@ -61,7 +61,9 @@ namespace FileOrbisApi.Controllers
 
                 if (folder.ParentFolderID == null)
                 {
-                    folderPath = Path.Combine("C:\\server\\", (user.UserName), folder.FolderName);
+                    var folderInfo= _context.FolderInfo.FirstOrDefault(x => x.UserID == folder.UserID);
+                    folder.ParentFolderID = folderInfo.FolderID;
+                    folderPath = Path.Combine(folderInfo.Path, folder.FolderName);
                     folder.Path = folderPath;
                 }
                 else
@@ -70,7 +72,7 @@ namespace FileOrbisApi.Controllers
                     folderPath = Path.Combine(parentFolder.Path, folder.FolderName);
                     folder.Path = folderPath;
                 }
-
+                folder.CreationDate = DateTime.Now;
                 Directory.CreateDirectory(folderPath);
 
                 var createFolder = await _genericService.Create(folder);

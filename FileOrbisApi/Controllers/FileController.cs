@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using System.IO;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+
 namespace FileOrbisApi.Controllers
 {
     [Route("api/[controller]")]
@@ -44,37 +47,9 @@ namespace FileOrbisApi.Controllers
             }
             return Ok(file);
         }
-
         [HttpPost]
         [Route("[action]")]
-        public async Task<IActionResult> CreateFile([FromBody] FileInfos file)
-        {
-            // nasıl upload ederim
-            // file olarak gönder
-            try
-            {
-                if (file.FolderID == 0)  // path ön yüzden gelecek.
-                    System.IO.File.Create(file.Path);
-                else
-                {
-                    var existingFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == file.FolderID);
-                    string newPath = Path.Combine(existingFolder.Path, file.FileName);
-                    System.IO.File.Copy(file.Path,newPath);
-                    file.Path = newPath;
-                }
-                var createFile = await _genericService.Create(file);
-
-                return CreatedAtAction("GetAllFiles", new { id = createFile.FileID }, createFile);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "An error occurred while creating the folder: " + ex.Message);
-            }
-        }
-
-        [HttpPost]
-        [Route("[action]")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> UploadFile(IFormFile file, int folderID)
         {
             if (file == null || file.Length == 0)
             {
@@ -83,15 +58,38 @@ namespace FileOrbisApi.Controllers
 
             try
             {
-                string uploadPath = @"C:\server\enescigdem";
-                string filePath = Path.Combine(uploadPath, file.FileName);
-
+                string filePath;
+                if (folderID == 0)
+                    filePath = Path.Combine("C:\\server\\enescigdem", file.FileName);
+                else
+                {
+                    var existingFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folderID);
+                    filePath = Path.Combine(existingFolder.Path, file.FileName);
+                }
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
+                FileInfos fileInfo = new FileInfos
+                {
+                    FileName = file.FileName,
+                    Path = filePath,
+                    Size = file.Length,
+                    CreationDate = DateTime.Now,
+                    FolderID = folderID
+                };
+                
+                await _genericService.Create(fileInfo);
 
-                return Ok("File uploaded successfully!");
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    ReferenceHandler = ReferenceHandler.Preserve,
+                    WriteIndented = true
+                };
+
+                string json = JsonSerializer.Serialize(fileInfo, jsonOptions);
+
+                return Content(json, "application/json");
             }
             catch (Exception ex)
             {
@@ -130,6 +128,42 @@ namespace FileOrbisApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+            }
+        }
+        [HttpGet]
+        [Route("[action]/{id}")]
+        public IActionResult DownloadFile(int id)
+        {
+            var file = _genericService.GetListByID(id).Result;
+            if (file == null)
+            {
+                return NotFound();
+            }
+
+            string filePath = file.Path;
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                {
+                    stream.CopyTo(memory);
+                }
+                memory.Position = 0;
+
+                var contentType = "application/octet-stream";
+                var fileName = Path.GetFileName(filePath);
+
+                return File(memory, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while downloading the file: " + ex.Message);
             }
         }
     }

@@ -18,7 +18,7 @@ namespace FileOrbis.EntityLayer.Concrete
         public string Path { get; set; }
         public double Size { get; set; }
         public DateTime CreationDate { get; set; }
-        public int FolderID { get; set; }
-        public virtual FolderInfo? Folder { get; set; }  
+        public int? FolderID { get; set; }
+        //public virtual FolderInfo? Folder { get; set; }  
     }
 }

@@ -20,7 +20,8 @@ namespace FileOrbis.EntityLayer.Concrete
         [StringLength(50)]
         [Required]
         public string Password { get; set; }
+        public string? ResetToken { get; set; }
 
-        public virtual List<FolderInfo>? Folders { get; set; }
+        //public virtual List<FolderInfo>? Folders { get; set; }
     }
 }
