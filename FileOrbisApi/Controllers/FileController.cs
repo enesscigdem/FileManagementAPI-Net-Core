@@ -101,8 +101,10 @@ namespace FileOrbisApi.Controllers
         [Route("[action]/{id}")]
         public async Task<IActionResult> DeleteFile(int id)
         {
-            if (await _genericService.GetListByID(id) != null)
+            var file = await _genericService.GetListByID(id);
+            if (file!= null)
             {
+                System.IO.File.Delete(file.Path);
                 await _genericService.Delete(id);
                 return Ok();
             }
@@ -136,16 +138,12 @@ namespace FileOrbisApi.Controllers
         {
             var file = _genericService.GetListByID(id).Result;
             if (file == null)
-            {
                 return NotFound();
-            }
 
             string filePath = file.Path;
 
             if (!System.IO.File.Exists(filePath))
-            {
                 return NotFound();
-            }
 
             try
             {
@@ -165,6 +163,52 @@ namespace FileOrbisApi.Controllers
             {
                 return StatusCode(500, "An error occurred while downloading the file: " + ex.Message);
             }
+        }
+        [HttpGet("[action]/{id}")]
+        [AllowAnonymous]
+        public IActionResult GetImageByFileId(int id)
+        {
+            FileInfos fileInfo = _genericService.GetListByID(id).Result;
+
+            if (fileInfo == null || !IsImageFile(fileInfo.FileName))
+                return NotFound();
+
+            string filePath = fileInfo.Path;
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            return PhysicalFile(filePath, "image/jpeg");
+        }
+
+        private bool IsImageFile(string fileName)
+        {
+            string extension = Path.GetExtension(fileName);
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".bmp";
+        }
+
+
+        [HttpGet("[action]/{id}")]
+        [AllowAnonymous]
+        public IActionResult GetPdfByFileId(int id)
+        {
+            FileInfos fileInfo = _genericService.GetListByID(id).Result;
+
+            if (fileInfo == null || !IsPdfFile(fileInfo.FileName))
+                return NotFound();
+
+            string filePath = fileInfo.Path;
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            return PhysicalFile(filePath, "application/pdf");
+        }
+
+        private bool IsPdfFile(string fileName)
+        {
+            string extension = Path.GetExtension(fileName);
+            return extension == ".pdf";
         }
     }
 }

@@ -17,7 +17,7 @@ namespace FileOrbis.EntityLayer.Concrete
         [Required]
         public string UserName { get; set; }
 
-        [StringLength(50)]
+        [StringLength(200)]
         [Required]
         public string Password { get; set; }
         public string? ResetToken { get; set; }

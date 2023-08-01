@@ -74,9 +74,9 @@ namespace FileOrbisApi.Controllers
             var username = model.Username;
             var password = model.Password;
 
-            var authenticatedUser = user.FirstOrDefault(u => u.UserName == username && u.Password == password);
+            var authenticatedUser = user.FirstOrDefault(u => u.UserName == username);
 
-            if (authenticatedUser != null)
+            if (authenticatedUser != null && BCrypt.Net.BCrypt.Verify(password, authenticatedUser.Password))
             {
                 var key = "fileorbisproject";
                 CreateToken createToken = new CreateToken();
@@ -155,7 +155,9 @@ namespace FileOrbisApi.Controllers
             var validUsername = user.FirstOrDefault(u => u.UserName == username && u.ResetToken == resetToken); // Add the reset token check
             if (validUsername != null)
             {
-                validUsername.Password = model.NewPassword;
+                var salt = BCrypt.Net.BCrypt.GenerateSalt();
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.NewPassword, salt);
+                validUsername.Password = hashedPassword;
                 validUsername.ResetToken = null;
                 await _genericService.Update(validUsername);
 

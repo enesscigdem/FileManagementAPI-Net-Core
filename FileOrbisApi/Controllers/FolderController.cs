@@ -20,11 +20,13 @@ namespace FileOrbisApi.Controllers
     public class FolderController : ControllerBase
     {
         private IGenericService<FolderInfo> _genericService;
+        private IGenericService<FileInfo> _genericServiceFileInfo;
         private readonly FileOrbisContext _context;
 
-        public FolderController(IGenericService<FolderInfo> genericService, FileOrbisContext context)
+        public FolderController(IGenericService<FolderInfo> genericService, IGenericService<FileInfo> genericServiceFileInfo, FileOrbisContext context)
         {
             _genericService = genericService;
+            _genericServiceFileInfo = genericServiceFileInfo;
             _context = context;
         }
 
@@ -56,6 +58,7 @@ namespace FileOrbisApi.Controllers
             try
             {
                 var user = _context.UserInfo.FirstOrDefault(x => x.UserID == folder.UserID);
+                var parentFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folder.ParentFolderID);
 
                 if (folder == null || string.IsNullOrWhiteSpace(folder.FolderName) || folder.UserID == 0)
                     return BadRequest("Invalid folder data.");
@@ -69,9 +72,24 @@ namespace FileOrbisApi.Controllers
                 }
                 else
                 {
-                    var parentFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folder.ParentFolderID);
                     folderPath = Path.Combine(parentFolder.Path, folder.FolderName);
                     folder.Path = folderPath;
+                }
+
+                var existingFolder = _context.FolderInfo
+                    .FirstOrDefault(x => x.UserID == folder.UserID && x.ParentFolderID == folder.ParentFolderID && x.FolderName == folder.FolderName);
+
+                int count = 1;
+                while (existingFolder != null)
+                {
+                    string newName = $"{folder.FolderName}{count}";
+                    folder.FolderName = newName;
+                    folderPath = Path.Combine(parentFolder.Path, newName);
+                    folder.Path = folderPath;
+                    existingFolder = _context.FolderInfo
+                        .FirstOrDefault(x => x.UserID == folder.UserID && x.ParentFolderID == folder.ParentFolderID && x.FolderName == newName);
+
+                    count++;
                 }
                 folder.CreationDate = DateTime.Now;
                 Directory.CreateDirectory(folderPath);
@@ -85,16 +103,41 @@ namespace FileOrbisApi.Controllers
             }
         }
 
+
         [HttpDelete]
         [Route("[action]/{id}")]
         public async Task<IActionResult> DeleteFolder(int id)
         {
-            if (await _genericService.GetListByID(id) != null)
+            var folder = await _genericService.GetListByID(id);
+
+            if (folder != null)
             {
+                await DeleteFolderContents(id);
+
                 await _genericService.Delete(id);
+                DeleteDirectory(folder.Path);
+
                 return Ok();
             }
+
             return NotFound();
+        }
+
+        private async Task DeleteFolderContents(int folderId)
+        {
+            var subFolders = _context.FolderInfo.Where(x => x.ParentFolderID == folderId).ToList();
+            foreach (var subFolder in subFolders)
+            {
+                await DeleteFolderContents(subFolder.FolderID);
+                _context.FolderInfo.Remove(subFolder);
+            }
+
+            // Klasördeki dosyaları bul ve sil.
+            var files = _context.FileInfo.Where(x => x.FolderID == folderId).ToList();
+            foreach (var file in files)
+            {
+                _context.FileInfo.Remove(file); 
+            }
         }
         [HttpGet]
         [Route("[action]/{userID}")]
@@ -184,8 +227,20 @@ namespace FileOrbisApi.Controllers
                 }
             }
         }
+        public static void DeleteDirectory(string targetDirectory)
+        {
+            string[] files = Directory.GetFiles(targetDirectory);
+            string[] subDirectories = Directory.GetDirectories(targetDirectory);
+            foreach (string file in files)
+            {
+                System.IO.File.SetAttributes(file, FileAttributes.Normal);
+                System.IO.File.Delete(file);
+            }
+            foreach (string subDirectory in subDirectories)
+                DeleteDirectory(subDirectory);
 
-
+            Directory.Delete(targetDirectory, false);
+        }
         static void MoveFolder(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
