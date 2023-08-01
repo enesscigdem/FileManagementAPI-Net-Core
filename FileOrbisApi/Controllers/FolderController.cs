@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.IO.Compression;
 
 namespace FileOrbisApi.Controllers
 {
@@ -61,7 +62,7 @@ namespace FileOrbisApi.Controllers
 
                 if (folder.ParentFolderID == null)
                 {
-                    var folderInfo= _context.FolderInfo.FirstOrDefault(x => x.UserID == folder.UserID);
+                    var folderInfo = _context.FolderInfo.FirstOrDefault(x => x.UserID == folder.UserID);
                     folder.ParentFolderID = folderInfo.FolderID;
                     folderPath = Path.Combine(folderInfo.Path, folder.FolderName);
                     folder.Path = folderPath;
@@ -138,6 +139,53 @@ namespace FileOrbisApi.Controllers
 
             return NotFound();
         }
+        [HttpGet]
+        [Route("[action]/{folderName}")]
+        public IActionResult DownloadFolder(string folderName, string folderPath)
+        {
+            if (!Directory.Exists(folderPath))
+            {
+                return NotFound();
+            }
+
+            string zipFileName = folderName + ".zip";
+            string zipFilePath = Path.Combine(Path.GetTempPath(), zipFileName);
+
+            try
+            {
+                if (System.IO.File.Exists(zipFilePath))
+                {
+                    System.IO.File.Delete(zipFilePath);
+                }
+
+                ZipFile.CreateFromDirectory(folderPath, zipFilePath);
+
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(zipFilePath, FileMode.Open))
+                {
+                    stream.CopyTo(memory);
+                }
+                memory.Position = 0;
+
+                var contentType = "application/octet-stream";
+                var fileName = Path.GetFileName(zipFilePath);
+
+                return File(memory, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating or downloading the zip folder: " + ex.Message);
+            }
+            finally
+            {
+                if (System.IO.File.Exists(zipFilePath))
+                {
+                    System.IO.File.Delete(zipFilePath);
+                }
+            }
+        }
+
+
         static void MoveFolder(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
