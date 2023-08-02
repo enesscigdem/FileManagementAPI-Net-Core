@@ -73,7 +73,7 @@ namespace FileOrbisApi.Controllers
             var user = await _genericService.GetListAll();
             var username = model.Username;
             var password = model.Password;
-
+            
             var authenticatedUser = user.FirstOrDefault(u => u.UserName == username);
 
             if (authenticatedUser != null && BCrypt.Net.BCrypt.Verify(password, authenticatedUser.Password))
@@ -107,6 +107,9 @@ namespace FileOrbisApi.Controllers
         {
             var user = await _genericService.GetListAll();
             var username = model.Username;
+
+            HttpContext.Session.SetString("ResetPassUsername", model.Username);
+            HttpContext.Session.SetString("ResetPassEmail", model.Email);
 
             var validUsername = user.FirstOrDefault(u => u.UserName == username);
             if (validUsername != null)
@@ -149,10 +152,8 @@ namespace FileOrbisApi.Controllers
         public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordModel model)
         {
             var user = await _genericService.GetListAll();
-            var username = model.Username;
-            var resetToken = model.ResetToken;
 
-            var validUsername = user.FirstOrDefault(u => u.UserName == username && u.ResetToken == resetToken); // Add the reset token check
+            var validUsername = user.FirstOrDefault(x=>x.ResetToken == model.ResetToken);
             if (validUsername != null)
             {
                 var salt = BCrypt.Net.BCrypt.GenerateSalt();
@@ -179,7 +180,7 @@ namespace FileOrbisApi.Controllers
                 await _genericService.DeleteAll();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
             }

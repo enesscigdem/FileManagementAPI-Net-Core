@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.IO.Compression;
+using FileOrbisApi.ContextSingleton;
 
 namespace FileOrbisApi.Controllers
 {
@@ -20,14 +21,12 @@ namespace FileOrbisApi.Controllers
     public class FolderController : ControllerBase
     {
         private IGenericService<FolderInfo> _genericService;
-        private IGenericService<FileInfo> _genericServiceFileInfo;
         private readonly FileOrbisContext _context;
 
-        public FolderController(IGenericService<FolderInfo> genericService, IGenericService<FileInfo> genericServiceFileInfo, FileOrbisContext context)
+        public FolderController(IGenericService<FolderInfo> genericService)
         {
             _genericService = genericService;
-            _genericServiceFileInfo = genericServiceFileInfo;
-            _context = context;
+            _context = FileOrbisContextSingleton.GetInstance();
         }
 
         [HttpGet]
@@ -88,7 +87,7 @@ namespace FileOrbisApi.Controllers
                     folder.Path = folderPath;
                     existingFolder = _context.FolderInfo
                         .FirstOrDefault(x => x.UserID == folder.UserID && x.ParentFolderID == folder.ParentFolderID && x.FolderName == newName);
-
+                    
                     count++;
                 }
                 folder.CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
@@ -131,11 +130,10 @@ namespace FileOrbisApi.Controllers
                 _context.FolderInfo.Remove(subFolder);
             }
 
-            // Klasördeki dosyaları bul ve sil.
             var files = _context.FileInfo.Where(x => x.FolderID == folderId).ToList();
             foreach (var file in files)
             {
-                _context.FileInfo.Remove(file); 
+                _context.FileInfo.Remove(file);
             }
         }
         [HttpGet]

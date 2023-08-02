@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using System.IO;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using FileOrbisApi.ContextSingleton;
 
 namespace FileOrbisApi.Controllers
 {
@@ -22,12 +23,12 @@ namespace FileOrbisApi.Controllers
         private IGenericService<FileInfos> _genericService;
         private readonly FileOrbisContext _context;
 
-        public FileController(IGenericService<FileInfos> genericService, FileOrbisContext context)
+        public FileController(IGenericService<FileInfos> genericService)
         {
             _genericService = genericService;
-            _context = context;
-        }
+            _context = FileOrbisContextSingleton.GetInstance();
 
+        }
         [HttpGet]
         [Route("[action]")]
         public async Task<IActionResult> GetAllFiles()
