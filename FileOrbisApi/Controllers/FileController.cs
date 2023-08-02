@@ -70,12 +70,16 @@ namespace FileOrbisApi.Controllers
                 {
                     await file.CopyToAsync(stream);
                 }
+                long fileSizeBytes = file.Length;
+                double fileSizeMB = (double)fileSizeBytes / (1024 * 1024);
+                string fileSizeFormatted = fileSizeMB.ToString("0.00");
+
                 FileInfos fileInfo = new FileInfos
                 {
                     FileName = file.FileName,
                     Path = filePath,
-                    Size = file.Length,
-                    CreationDate = DateTime.Now,
+                    Size = double.Parse(fileSizeFormatted),
+                    CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
                     FolderID = folderID
                 };
                 
@@ -127,10 +131,28 @@ namespace FileOrbisApi.Controllers
                 await _genericService.DeleteAll();
                 return Ok();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
             }
+        }
+        [HttpPut]
+        [Route("[action]")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RenameFile([FromBody] FileInfos file)
+        {
+            var existingFolder = await _genericService.GetListByID(file.FileID);
+            if (existingFolder != null)
+            {
+                existingFolder.FileName = file.FileName;
+                string newPath = Path.Combine(Path.GetDirectoryName(existingFolder.Path), existingFolder.FileName);
+                System.IO.File.Move(existingFolder.Path, newPath);
+                existingFolder.Path = newPath;
+                await _genericService.Update(existingFolder);
+                return Ok(existingFolder);
+            }
+
+            return NotFound();
         }
         [HttpGet]
         [Route("[action]/{id}")]
@@ -209,6 +231,28 @@ namespace FileOrbisApi.Controllers
         {
             string extension = Path.GetExtension(fileName);
             return extension == ".pdf";
+        }
+        [HttpGet("[action]/{id}")]
+        [AllowAnonymous]
+        public IActionResult GetVideoByFileId(int id)
+        {
+            FileInfos fileInfo = _genericService.GetListByID(id).Result;
+
+            if (fileInfo == null || !IsVideoFile(fileInfo.FileName))
+                return NotFound();
+
+            string filePath = fileInfo.Path;
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            return PhysicalFile(filePath, "video/mp4");
+        }
+
+        private bool IsVideoFile(string fileName)
+        {
+            string extension = Path.GetExtension(fileName);
+            return extension == ".mp4" || extension == ".avi" || extension == ".mkv";
         }
     }
 }

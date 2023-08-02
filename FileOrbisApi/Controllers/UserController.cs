@@ -59,7 +59,7 @@ namespace FileOrbisApi.Controllers
             {
                 FolderName = createUser.UserName,
                 Path = Path.Combine("C:\\server\\",createUser.UserName),
-                CreationDate = DateTime.Now,
+                CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
                 UserID = createUser.UserID,
             };
             var createFolder = await _genericServiceFolder.Create(folderInfo);

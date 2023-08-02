@@ -91,9 +91,8 @@ namespace FileOrbisApi.Controllers
 
                     count++;
                 }
-                folder.CreationDate = DateTime.Now;
+                folder.CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
                 Directory.CreateDirectory(folderPath);
-
                 var createFolder = await _genericService.Create(folder);
                 return CreatedAtAction("GetAllFolders", new { id = createFolder.FolderID }, createFolder);
             }
