@@ -50,6 +50,10 @@ namespace FileOrbisApi.Controllers
         }
         [HttpPost]
         [Route("[action]")]
+        [AllowAnonymous]
+        [RequestFormLimits(ValueLengthLimit = int.MaxValue,
+        MultipartBodyLengthLimit = long.MaxValue)]
+        [DisableRequestSizeLimit]
         public async Task<IActionResult> UploadFile(IFormFile file, int folderID)
         {
             if (file == null || file.Length == 0)
@@ -60,13 +64,8 @@ namespace FileOrbisApi.Controllers
             try
             {
                 string filePath;
-                if (folderID == 0)
-                    filePath = Path.Combine("C:\\server\\enescigdem", file.FileName);
-                else
-                {
-                    var existingFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folderID);
-                    filePath = Path.Combine(existingFolder.Path, file.FileName);
-                }
+                var existingFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folderID);
+                filePath = Path.Combine(existingFolder.Path, file.FileName);
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
@@ -83,7 +82,7 @@ namespace FileOrbisApi.Controllers
                     CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
                     FolderID = folderID
                 };
-                
+
                 await _genericService.Create(fileInfo);
 
                 var jsonOptions = new JsonSerializerOptions
@@ -107,7 +106,7 @@ namespace FileOrbisApi.Controllers
         public async Task<IActionResult> DeleteFile(int id)
         {
             var file = await _genericService.GetListByID(id);
-            if (file!= null)
+            if (file != null)
             {
                 System.IO.File.Delete(file.Path);
                 await _genericService.Delete(id);
@@ -207,7 +206,7 @@ namespace FileOrbisApi.Controllers
         private bool IsImageFile(string fileName)
         {
             string extension = Path.GetExtension(fileName);
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".bmp";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".bmp" || extension == ".webp";
         }
 
 

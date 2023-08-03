@@ -23,10 +23,10 @@ namespace FileOrbisApi.Controllers
         private IGenericService<FolderInfo> _genericService;
         private readonly FileOrbisContext _context;
 
-        public FolderController(IGenericService<FolderInfo> genericService)
+        public FolderController(IGenericService<FolderInfo> genericService, FileOrbisContext context)
         {
             _genericService = genericService;
-            _context = FileOrbisContextSingleton.GetInstance();
+            _context = context;
         }
 
         [HttpGet]
@@ -164,6 +164,7 @@ namespace FileOrbisApi.Controllers
         }
         [HttpPut]
         [Route("[action]")]
+        [AllowAnonymous]
         public async Task<IActionResult> RenameFolder([FromBody] FolderInfo folder)
         {
             var existingFolder = await _genericService.GetListByID(folder.FolderID);

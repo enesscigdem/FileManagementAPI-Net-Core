@@ -9,16 +9,16 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Caching.Distributed; // Import the namespace for distributed cache
+using Microsoft.Extensions.Caching.Distributed;
 using FileOrbis.BusinessLayer.Abstract;
 using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.DataAccessLayer.Repositories;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuration setup if you have any
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
     .AddJsonFile("appsettings.json")
@@ -103,13 +103,19 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.Configure<FormOptions>(x =>
+{
+    x.ValueLengthLimit = int.MaxValue;
+    x.MultipartBodyLengthLimit = int.MaxValue;
+    x.MultipartHeadersLengthLimit = int.MaxValue;
+});
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FileOrbis API v1"));
     app.UseCors();
 }
 
@@ -118,11 +124,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseSession();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseSwagger();
-app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FileOrbis API v1"));
 
 app.MapControllers();
 

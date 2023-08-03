@@ -12,7 +12,6 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Net.Mail;
 using System.Net;
-using FileOrbisApi.PassGenerate;
 using Microsoft.EntityFrameworkCore;
 
 namespace FileOrbisApi.Controllers
