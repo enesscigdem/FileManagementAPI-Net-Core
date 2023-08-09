@@ -16,6 +16,7 @@ using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.DataAccessLayer.Repositories;
 using Microsoft.AspNetCore.Http.Features;
+using FileOrbis.DataAccessLayer.UnitOfWork;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericManager<>));
 builder.Services.AddScoped(typeof(IGenericDal<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

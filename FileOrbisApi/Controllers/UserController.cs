@@ -81,7 +81,7 @@ namespace FileOrbisApi.Controllers
                 CreateToken createToken = new CreateToken();
                 var token = createToken.GenerateJwtToken(authenticatedUser, key);
 
-                return Ok(new { Message = "Login successful!", Token = token, UserID = authenticatedUser.UserID });
+                return Ok(new { Message = "Login successful!", Token = token, userID = authenticatedUser.UserID });
             }
 
             return BadRequest(new { Message = "Username or password is wrong!" });

@@ -1,5 +1,6 @@
 ﻿using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
+using FileOrbis.DataAccessLayer.UnitOfWork;
 using FileOrbis.EntityLayer.Concrete;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,16 +14,18 @@ namespace FileOrbis.DataAccessLayer.Repositories
     public class GenericRepository<T> : IGenericDal<T> where T : class
     {
         private readonly FileOrbisContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public GenericRepository(FileOrbisContext context)
+        public GenericRepository(IUnitOfWork unitOfWork, FileOrbisContext context)
         {
+            _unitOfWork = unitOfWork;
             _context = context;
         }
 
         public async Task<T> Create(T t)
         {
             await _context.Set<T>().AddAsync(t);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return t;
         }
 
@@ -30,7 +33,7 @@ namespace FileOrbis.DataAccessLayer.Repositories
         {
             var item = await GetListByID(id);
             _context.Remove(item);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<List<FolderInfo>> GetFoldersByUserID(int userID)
@@ -58,7 +61,7 @@ namespace FileOrbis.DataAccessLayer.Repositories
         public async Task<T> Update(T t)
         {
             _context.Set<T>().Update(t);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return t;
         }
 
@@ -66,7 +69,7 @@ namespace FileOrbis.DataAccessLayer.Repositories
         {
             var allFolders = await _context.Set<T>().ToListAsync();
             _context.Set<T>().RemoveRange(allFolders);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }
