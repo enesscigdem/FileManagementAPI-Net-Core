@@ -15,10 +15,7 @@ namespace FileOrbis.EntityLayer.Concrete
         public string FolderName { get; set; }
         public string Path { get; set; }
         public string? CreationDate { get; set; }
-        //public virtual ICollection<FileInfos>? Files { get; set; } 
         public int UserID { get; set; }
-        //public virtual UserInfo? User { get; set; }
-
         public int? ParentFolderID { get; set; }
     }
 }

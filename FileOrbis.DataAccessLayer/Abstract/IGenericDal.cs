@@ -10,14 +10,11 @@ namespace FileOrbis.DataAccessLayer.Abstract
 {
     public interface IGenericDal<T>
     {
-        Task<List<T>> GetListAll();
+        Task<List<T>> GetListAll(); Task Delete(int id);
         Task<T> GetListByID(int id);
-        Task<T> Update(T t);
         Task<T> Create(T t);
-        Task Delete(int id);
+        Task<T> Update(T t);
         Task DeleteAll();
-        Task<List<FolderInfo>> GetFoldersByUserID(int userID);
-        Task<List<FileInfos>> GetFilesByFolderID(int folderID);
-
+        Task<int> SaveChangesAsync();
     }
 }

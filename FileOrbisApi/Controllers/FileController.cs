@@ -11,7 +11,6 @@ using Microsoft.Extensions.Hosting;
 using System.IO;
 using System.Text.Json.Serialization;
 using System.Text.Json;
-using FileOrbisApi.ContextSingleton;
 
 namespace FileOrbisApi.Controllers
 {
@@ -20,33 +19,119 @@ namespace FileOrbisApi.Controllers
     [Authorize]
     public class FileController : ControllerBase
     {
-        private IGenericService<FileInfos> _genericService;
-        private readonly FileOrbisContext _context;
+        private IFileService _fileService;
 
-        public FileController(IGenericService<FileInfos> genericService)
+        public FileController(IFileService fileService)
         {
-            _genericService = genericService;
-            _context = FileOrbisContextSingleton.GetInstance();
+            _fileService = fileService;
 
         }
         [HttpGet]
         [Route("[action]")]
         public async Task<IActionResult> GetAllFiles()
         {
-            var fileList = await _genericService.GetListAll();
-            return Ok(fileList);
+            try
+            {
+                var fileList = await _fileService.GetListAll();
+                return Ok(fileList);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while get the files: " + ex.Message);
+            }
         }
 
         [HttpGet]
         [Route("[action]/{id}")]
         public async Task<IActionResult> GetFileByID(int id)
         {
-            var file = await _genericService.GetListByID(id);
-            if (file == null)
+            try
             {
-                return NotFound();
+                var file = await _fileService.GetListByID(id);
+                return Ok(file);
             }
-            return Ok(file);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while get the files: " + ex.Message);
+            }
+
+        }
+        [HttpDelete]
+        [Route("[action]/{id}")]
+        public async Task<IActionResult> DeleteFile(int id)
+        {
+            try
+            {
+                await _fileService.DeleteFile(id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while renaming the files: " + ex.Message);
+            }
+        }
+        [HttpGet]
+        [Route("[action]/{folderID}")]
+        public async Task<IActionResult> GetFilesByFolderID(int folderID)
+        {
+            try
+            {
+                var fileList = await _fileService.GetFilesByFolderID(folderID);
+                return Ok(fileList);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while get the files: " + ex.Message);
+            }
+        }
+
+        [HttpDelete]
+        [Route("[action]")]
+        public async Task<IActionResult> DeleteAllFiles()
+        {
+            try
+            {
+                await _fileService.DeleteAll();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while delete all files: " + ex.Message);
+            }
+        }
+        [HttpPut]
+        [Route("[action]")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RenameFile([FromBody] FileInfos file)
+        {
+            try
+            {
+                await _fileService.RenameFile(file);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while renaming the file: " + ex.Message);
+            }
+        }
+        [HttpGet]
+        [Route("[action]/{id}")]
+        public async Task<IActionResult> DownloadFile(int id)
+        {
+            try
+            {
+                var result = await _fileService.DownloadFile(id);
+                if (result.fileBytes == null)
+                    return NotFound();
+
+                var contentType = "application/octet-stream";
+
+                return File(result.fileBytes, contentType, result.fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while downloading the file: " + ex.Message);
+            }
         }
         [HttpPost]
         [Route("[action]")]
@@ -56,34 +141,9 @@ namespace FileOrbisApi.Controllers
         [DisableRequestSizeLimit]
         public async Task<IActionResult> UploadFile(IFormFile file, int folderID)
         {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("No file received or file is empty.");
-            }
-
             try
             {
-                string filePath;
-                var existingFolder = _context.FolderInfo.FirstOrDefault(x => x.FolderID == folderID);
-                filePath = Path.Combine(existingFolder.Path, file.FileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-                long fileSizeBytes = file.Length;
-                double fileSizeMB = (double)fileSizeBytes / (1024 * 1024);
-                string fileSizeFormatted = fileSizeMB.ToString("0.00");
-
-                FileInfos fileInfo = new FileInfos
-                {
-                    FileName = file.FileName,
-                    Path = filePath,
-                    Size = double.Parse(fileSizeFormatted),
-                    CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
-                    FolderID = folderID
-                };
-
-                await _genericService.Create(fileInfo);
+                var uploadedFile = await _fileService.UploadFile(file, folderID);
 
                 var jsonOptions = new JsonSerializerOptions
                 {
@@ -91,7 +151,7 @@ namespace FileOrbisApi.Controllers
                     WriteIndented = true
                 };
 
-                string json = JsonSerializer.Serialize(fileInfo, jsonOptions);
+                string json = JsonSerializer.Serialize(uploadedFile, jsonOptions);
 
                 return Content(json, "application/json");
             }
@@ -101,107 +161,51 @@ namespace FileOrbisApi.Controllers
             }
         }
 
-        [HttpDelete]
-        [Route("[action]/{id}")]
-        public async Task<IActionResult> DeleteFile(int id)
-        {
-            var file = await _genericService.GetListByID(id);
-            if (file != null)
-            {
-                System.IO.File.Delete(file.Path);
-                await _genericService.Delete(id);
-                return Ok();
-            }
-            return NotFound();
-        }
-        [HttpGet]
-        [Route("[action]/{folderID}")]
-        public async Task<IActionResult> GetFilesByFolderID(int folderID)
-        {
-            var fileList = await _genericService.GetFilesByFolderID(folderID);
-            return Ok(fileList);
-        }
+       
 
-        [HttpDelete]
-        [Route("[action]")]
-        public async Task<IActionResult> DeleteAllFiles()
+        private async Task<IActionResult> GetFileByType(int id, Func<string, bool> extensionCheck, string contentType)
         {
             try
             {
-                await _genericService.DeleteAll();
-                return Ok();
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
-            }
-        }
-        [HttpPut]
-        [Route("[action]")]
-        [AllowAnonymous]
-        public async Task<IActionResult> RenameFile([FromBody] FileInfos file)
-        {
-            var existingFolder = await _genericService.GetListByID(file.FileID);
-            if (existingFolder != null)
-            {
-                existingFolder.FileName = file.FileName;
-                string newPath = Path.Combine(Path.GetDirectoryName(existingFolder.Path), existingFolder.FileName);
-                System.IO.File.Move(existingFolder.Path, newPath);
-                existingFolder.Path = newPath;
-                await _genericService.Update(existingFolder);
-                return Ok(existingFolder);
-            }
+                FileInfos fileInfo = await _fileService.GetListByID(id);
+                if (fileInfo == null || !extensionCheck(fileInfo.FileName))
+                    return NotFound();
 
-            return NotFound();
-        }
-        [HttpGet]
-        [Route("[action]/{id}")]
-        public IActionResult DownloadFile(int id)
-        {
-            var file = _genericService.GetListByID(id).Result;
-            if (file == null)
-                return NotFound();
+                string filePath = fileInfo.Path;
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound();
 
-            string filePath = file.Path;
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-
-            try
-            {
-                var memory = new MemoryStream();
-                using (var stream = new FileStream(filePath, FileMode.Open))
-                {
-                    stream.CopyTo(memory);
-                }
-                memory.Position = 0;
-
-                var contentType = "application/octet-stream";
-                var fileName = Path.GetFileName(filePath);
-
-                return File(memory, contentType, fileName);
+                return PhysicalFile(filePath, contentType);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, "An error occurred while downloading the file: " + ex.Message);
             }
+
         }
+
         [HttpGet("[action]/{id}")]
         [AllowAnonymous]
-        public IActionResult GetImageByFileId(int id)
+        public async Task<IActionResult> GetImageByFileId(int id)
         {
-            FileInfos fileInfo = _genericService.GetListByID(id).Result;
-
-            if (fileInfo == null || !IsImageFile(fileInfo.FileName))
-                return NotFound();
-
-            string filePath = fileInfo.Path;
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-
-            return PhysicalFile(filePath, "image/jpeg");
+            return await GetFileByType(id, IsImageFile, "image/jpeg");
         }
+
+
+        [HttpGet("[action]/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPdfByFileId(int id)
+        {
+            return await GetFileByType(id, IsPdfFile, "application/pdf");
+        }
+
+        [HttpGet("[action]/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetVideoByFileId(int id)
+        {
+            return await GetFileByType(id, IsVideoFile, "video/mp4");
+        }
+
 
         private bool IsImageFile(string fileName)
         {
@@ -209,44 +213,10 @@ namespace FileOrbisApi.Controllers
             return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".bmp" || extension == ".webp";
         }
 
-
-        [HttpGet("[action]/{id}")]
-        [AllowAnonymous]
-        public IActionResult GetPdfByFileId(int id)
-        {
-            FileInfos fileInfo = _genericService.GetListByID(id).Result;
-
-            if (fileInfo == null || !IsPdfFile(fileInfo.FileName))
-                return NotFound();
-
-            string filePath = fileInfo.Path;
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-
-            return PhysicalFile(filePath, "application/pdf");
-        }
-
         private bool IsPdfFile(string fileName)
         {
             string extension = Path.GetExtension(fileName);
             return extension == ".pdf";
-        }
-        [HttpGet("[action]/{id}")]
-        [AllowAnonymous]
-        public IActionResult GetVideoByFileId(int id)
-        {
-            FileInfos fileInfo = _genericService.GetListByID(id).Result;
-
-            if (fileInfo == null || !IsVideoFile(fileInfo.FileName))
-                return NotFound();
-
-            string filePath = fileInfo.Path;
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-
-            return PhysicalFile(filePath, "video/mp4");
         }
 
         private bool IsVideoFile(string fileName)

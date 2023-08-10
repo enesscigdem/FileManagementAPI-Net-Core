@@ -15,8 +15,6 @@ namespace FileOrbis.BusinessLayer.Abstract
         Task<T> Create(T t);
         Task Delete(int id);
         Task DeleteAll();
-        Task<List<FolderInfo>> GetFoldersByUserID(int userID);
-        Task<List<FileInfos>> GetFilesByFolderID(int folderID);
-
+        Task<int> SaveChangesAsync();
     }
 }

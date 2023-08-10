@@ -3,7 +3,6 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
-using FileOrbisApi.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using FileOrbisApi.JWT;
@@ -13,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Net.Mail;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
+using FileOrbis.DataAccessLayer.Model;
 
 namespace FileOrbisApi.Controllers
 {
@@ -20,19 +20,18 @@ namespace FileOrbisApi.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private IGenericService<UserInfo> _genericService;
-        private IGenericService<FolderInfo> _genericServiceFolder;
-        public UserController(IGenericService<UserInfo> genericService, IGenericService<FolderInfo> genericServiceFolder)
+        private IUserService _userService;
+
+        public UserController(IUserService userService)
         {
-            _genericService = genericService;
-            _genericServiceFolder = genericServiceFolder;
+            _userService = userService;
         }
         [HttpGet]
         [Route("[action]")]
         [Authorize]
         public async Task<IActionResult> GetAllUsers()
         {
-            var userList = await _genericService.GetListAll();
+            var userList = await _userService.GetListAll();
             return Ok(userList);
         }
 
@@ -41,7 +40,7 @@ namespace FileOrbisApi.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserByID(int id)
         {
-            var user = await _genericService.GetListByID(id);
+            var user = await _userService.GetListByID(id);
             if (user == null)
             {
                 return NotFound();
@@ -53,26 +52,18 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
-            var createUser = await _genericService.Create(user);
-            FolderInfo folderInfo= new FolderInfo
-            {
-                FolderName = createUser.UserName,
-                Path = Path.Combine("C:\\server\\",createUser.UserName),
-                CreationDate = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"),
-                UserID = createUser.UserID,
-            };
-            var createFolder = await _genericServiceFolder.Create(folderInfo);
-            Directory.CreateDirectory("C:\\server\\" + createUser.UserName);
-            return CreatedAtAction("GetAllUsers", new { id = user.UserID }, createUser);
+            await _userService.CreateUser(user);
+
+            return CreatedAtAction("GetAllUsers", new { id = user.UserID }, user);
         }
         [HttpPost]
         [Route("[action]")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var user = await _genericService.GetListAll();
+            var user = await _userService.GetListAll();
             var username = model.Username;
             var password = model.Password;
-            
+
             var authenticatedUser = user.FirstOrDefault(u => u.UserName == username);
 
             if (authenticatedUser != null && BCrypt.Net.BCrypt.Verify(password, authenticatedUser.Password))
@@ -92,9 +83,10 @@ namespace FileOrbisApi.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            if (await _genericService.GetListByID(id) != null)
+            if (await _userService.GetListByID(id) != null)
             {
-                await _genericService.Delete(id);
+                await _userService.Delete(id);
+                await _userService.SaveChangesAsync();
                 return Ok();
             }
             return NotFound();
@@ -104,13 +96,9 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordModel model)
         {
-            var user = await _genericService.GetListAll();
-            var username = model.Username;
 
-            HttpContext.Session.SetString("ResetPassUsername", model.Username);
-            HttpContext.Session.SetString("ResetPassEmail", model.Email);
+            var validUsername = await _userService.GetUserByUsername(model.Username);
 
-            var validUsername = user.FirstOrDefault(u => u.UserName == username);
             if (validUsername != null)
             {
                 var userEmail = model.Email;
@@ -128,7 +116,8 @@ namespace FileOrbisApi.Controllers
                     mail.Body = $"Click the link below to reset your password: http://localhost:5173/reset-password?token={resetToken}";
                     smtpServer.Send(mail);
                     validUsername.ResetToken = resetToken;
-                    await _genericService.Update(validUsername);
+                    await _userService.Update(validUsername);
+                    await _userService.SaveChangesAsync();
 
                     return Ok(new { Message = "An email with instructions has been sent to the user's email address." });
                 }
@@ -150,16 +139,17 @@ namespace FileOrbisApi.Controllers
         [Route("[action]")]
         public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordModel model)
         {
-            var user = await _genericService.GetListAll();
+            var user = await _userService.GetListAll();
+            var validUsername = user.FirstOrDefault(x => x.ResetToken == model.ResetToken);
 
-            var validUsername = user.FirstOrDefault(x=>x.ResetToken == model.ResetToken);
             if (validUsername != null)
             {
                 var salt = BCrypt.Net.BCrypt.GenerateSalt();
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.NewPassword, salt);
                 validUsername.Password = hashedPassword;
                 validUsername.ResetToken = null;
-                await _genericService.Update(validUsername);
+                await _userService.Update(validUsername);
+                await _userService.SaveChangesAsync();
 
                 return Ok(new { Message = "Password has been successfully reset." });
             }
@@ -176,7 +166,7 @@ namespace FileOrbisApi.Controllers
         {
             try
             {
-                await _genericService.DeleteAll();
+                await _userService.DeleteAll();
                 return Ok();
             }
             catch (Exception)

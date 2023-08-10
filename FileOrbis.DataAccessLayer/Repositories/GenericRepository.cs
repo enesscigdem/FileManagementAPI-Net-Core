@@ -25,7 +25,6 @@ namespace FileOrbis.DataAccessLayer.Repositories
         public async Task<T> Create(T t)
         {
             await _context.Set<T>().AddAsync(t);
-            await _unitOfWork.SaveChangesAsync();
             return t;
         }
 
@@ -33,21 +32,8 @@ namespace FileOrbis.DataAccessLayer.Repositories
         {
             var item = await GetListByID(id);
             _context.Remove(item);
-            await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<List<FolderInfo>> GetFoldersByUserID(int userID)
-        {
-            return await _context.FolderInfo
-                .Where(f => f.UserID == userID && f.ParentFolderID == null)
-                .ToListAsync();
-        }
-        public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)
-        {
-            return await _context.FileInfo
-                .Where(f => f.FolderID == folderID)
-                .ToListAsync();
-        }
         public async Task<List<T>> GetListAll()
         {
             return await _context.Set<T>().ToListAsync();
@@ -61,15 +47,18 @@ namespace FileOrbis.DataAccessLayer.Repositories
         public async Task<T> Update(T t)
         {
             _context.Set<T>().Update(t);
-            await _unitOfWork.SaveChangesAsync();
             return t;
         }
 
         public async Task DeleteAll()
         {
-            var allFolders = await _context.Set<T>().ToListAsync();
-            _context.Set<T>().RemoveRange(allFolders);
-            await _unitOfWork.SaveChangesAsync();
+            var allItems = await _context.Set<T>().ToListAsync();
+            _context.Set<T>().RemoveRange(allItems);
+        }
+
+        public async Task<int> SaveChangesAsync()
+        {
+            return await _unitOfWork.SaveChangesAsync();
         }
     }
 }

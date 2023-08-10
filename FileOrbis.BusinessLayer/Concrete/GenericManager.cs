@@ -17,10 +17,6 @@ namespace FileOrbis.BusinessLayer.Concrete
         {
             _genericDal = genericDal;
         }
-        public async Task<List<FolderInfo>> GetFoldersByUserID(int userID)
-        {
-            return await _genericDal.GetFoldersByUserID(userID);
-        }
         public async Task<T> Create(T t)
         {
             return await _genericDal.Create(t);
@@ -40,12 +36,6 @@ namespace FileOrbis.BusinessLayer.Concrete
         {
             return await _genericDal.GetListByID(id);
         }
-
-        public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)
-        {
-            return await _genericDal.GetFilesByFolderID(folderID);
-        }
-
         public async Task<T> Update(T t)
         {
             return await _genericDal.Update(t);
@@ -54,6 +44,11 @@ namespace FileOrbis.BusinessLayer.Concrete
         public async Task DeleteAll()
         {
             await _genericDal.DeleteAll();
+        }
+
+        public async Task<int> SaveChangesAsync()
+        {
+           return await _genericDal.SaveChangesAsync();
         }
     }
 }
