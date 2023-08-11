@@ -17,7 +17,6 @@ namespace FileOrbis.BusinessLayer.Concrete
         {
             _fileDal = fileDal;
         }
-
         public async Task DeleteFile(int id)
         {
             await _fileDal.DeleteFile(id);

@@ -31,8 +31,15 @@ namespace FileOrbisApi.Controllers
         [Authorize]
         public async Task<IActionResult> GetAllUsers()
         {
-            var userList = await _userService.GetListAll();
-            return Ok(userList);
+            try
+            {
+                var userList = await _userService.GetListAll();
+                return Ok(userList);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while get all the users: " + ex.Message);
+            }
         }
 
         [HttpGet]
@@ -40,126 +47,68 @@ namespace FileOrbisApi.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserByID(int id)
         {
-            var user = await _userService.GetListByID(id);
-            if (user == null)
+            try
             {
-                return NotFound();
+                var user = await _userService.GetListByID(id);
+                return Ok(user);
             }
-            return Ok(user);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while get user: " + ex.Message);
+            }
         }
 
         [HttpPost]
         [Route("[action]")]
         public async Task<IActionResult> CreateUser([FromBody] UserInfo user)
         {
-            await _userService.CreateUser(user);
-
-            return CreatedAtAction("GetAllUsers", new { id = user.UserID }, user);
+            try
+            {
+                await _userService.CreateUser(user);
+                return CreatedAtAction("GetAllUsers", new { id = user.UserID }, user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred create a user: " + ex.Message);
+            }
         }
         [HttpPost]
         [Route("[action]")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var user = await _userService.GetListAll();
-            var username = model.Username;
-            var password = model.Password;
-
-            var authenticatedUser = user.FirstOrDefault(u => u.UserName == username);
-
-            if (authenticatedUser != null && BCrypt.Net.BCrypt.Verify(password, authenticatedUser.Password))
+            try
             {
-                var key = "fileorbisproject";
-                CreateToken createToken = new CreateToken();
-                var token = createToken.GenerateJwtToken(authenticatedUser, key);
-
-                return Ok(new { Message = "Login successful!", Token = token, userID = authenticatedUser.UserID });
+                var user = await _userService.Login(model.Username, model.Password);
+                if (user!=null)
+                {
+                    var key = "fileorbisproject";
+                    CreateToken createToken = new CreateToken();
+                    var token = createToken.GenerateJwtToken(user, key);
+                    return Ok(new { Message = "Login successful!", Token = token, userID = user.UserID });
+                }
+                return BadRequest();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred in login process: " + ex.Message);
             }
 
-            return BadRequest(new { Message = "Username or password is wrong!" });
         }
-
         [HttpDelete]
         [Route("[action]/{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            if (await _userService.GetListByID(id) != null)
+            try
             {
-                await _userService.Delete(id);
-                await _userService.SaveChangesAsync();
+                await _userService.DeleteUser(id);
                 return Ok();
             }
-            return NotFound();
-        }
-
-        [HttpPost]
-        [Route("[action]")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordModel model)
-        {
-
-            var validUsername = await _userService.GetUserByUsername(model.Username);
-
-            if (validUsername != null)
+            catch (Exception ex)
             {
-                var userEmail = model.Email;
-                string resetToken = GenerateResetToken();
-
-                try
-                {
-                    var mail = new MailMessage();
-                    var smtpServer = new SmtpClient("smtp.office365.com", 587);
-                    smtpServer.Credentials = new NetworkCredential("Enes.Staj@hotmail.com", "Enes123*");
-                    smtpServer.EnableSsl = true;
-                    mail.From = new MailAddress("Enes.staj@hotmail.com");
-                    mail.To.Add(userEmail);
-                    mail.Subject = "Password Reset";
-                    mail.Body = $"Click the link below to reset your password: http://localhost:5173/reset-password?token={resetToken}";
-                    smtpServer.Send(mail);
-                    validUsername.ResetToken = resetToken;
-                    await _userService.Update(validUsername);
-                    await _userService.SaveChangesAsync();
-
-                    return Ok(new { Message = "An email with instructions has been sent to the user's email address." });
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the reset email." });
-                }
-            }
-            else
-            {
-                return BadRequest(new { Message = "No such user found!" });
+                return StatusCode(500, "An error occurred while deleting the user: " + ex.Message);
             }
         }
-        private string GenerateResetToken()
-        {
-            return Guid.NewGuid().ToString();
-        }
-        [HttpPost]
-        [Route("[action]")]
-        public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordModel model)
-        {
-            var user = await _userService.GetListAll();
-            var validUsername = user.FirstOrDefault(x => x.ResetToken == model.ResetToken);
-
-            if (validUsername != null)
-            {
-                var salt = BCrypt.Net.BCrypt.GenerateSalt();
-                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.NewPassword, salt);
-                validUsername.Password = hashedPassword;
-                validUsername.ResetToken = null;
-                await _userService.Update(validUsername);
-                await _userService.SaveChangesAsync();
-
-                return Ok(new { Message = "Password has been successfully reset." });
-            }
-            else
-            {
-                return BadRequest(new { Message = "Invalid reset token or user not found!" });
-            }
-        }
-
-
         [HttpDelete]
         [Route("[action]")]
         public async Task<IActionResult> DeleteAllUsers()
@@ -172,6 +121,42 @@ namespace FileOrbisApi.Controllers
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while sending the new password." });
+            }
+        }
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordModel model)
+        {
+            try
+            {
+                await _userService.GetUserByUsername(model.Username);
+
+                await _userService.ForgotPassword(model);
+
+                return Ok(new { Message = "An email with instructions has been sent to the user's email address." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while forgot password process " + ex.Message);
+            }
+        }
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordModel model)
+        {
+            try
+            {
+                var user = await _userService.GetUserByResetToken(model.ResetToken);
+                if (user!=null)
+                {
+                    await _userService.ResetPassword(model, model.NewPassword);
+                    return Ok(new { Message = "Password has been successfully reset." });
+                }
+                return BadRequest();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while reset password process " + ex.Message);
             }
         }
     }

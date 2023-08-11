@@ -15,6 +15,5 @@ namespace FileOrbis.BusinessLayer.Abstract
         Task DeleteFolder(int id);
         Task<byte[]> DownloadFolder(string folderName, string folderPath);
         Task<FolderInfo> CreateFolder(FolderInfo folder);
-
     }
 }

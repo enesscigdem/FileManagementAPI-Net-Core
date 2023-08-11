@@ -20,27 +20,37 @@ namespace FileOrbis.BusinessLayer.Concrete
 
         public async Task CreateUser(UserInfo user)
         {
-            await _userDal.CreateUser(user);  
+            await _userDal.CreateUser(user);
         }
 
-        public Task ForgotPassword(ForgotPasswordModel model)
+        public async Task DeleteUser(int id)
         {
-            throw new NotImplementedException();
+            await _userDal.DeleteUser(id);
         }
 
-        public Task<UserInfo> GetUserByUsername(string username)
+        public async Task ForgotPassword(ForgotPasswordModel model)
         {
-            throw new NotImplementedException();
+            await _userDal.ForgotPassword(model);
         }
 
-        public Task Login(LoginModel model)
+        public async Task<UserInfo> GetUserByResetToken(string resetToken)
         {
-            throw new NotImplementedException();
+            return await _userDal.GetUserByResetToken(resetToken);
         }
 
-        public Task ResetPassword(ForgotPasswordModel model)
+        public async Task<UserInfo> GetUserByUsername(string username)
         {
-            throw new NotImplementedException();
+            return await _userDal.GetUserByUsername(username);
+        }
+
+        public async Task<UserInfo> Login(string username, string password)
+        {
+            return await _userDal.Login(username, password);
+        }
+
+        public async Task ResetPassword(ForgotPasswordModel model, string newPassword)
+        {
+            await _userDal.ResetPassword(model, newPassword);
         }
     }
 }

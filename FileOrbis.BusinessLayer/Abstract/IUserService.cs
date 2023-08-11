@@ -10,10 +10,12 @@ namespace FileOrbis.BusinessLayer.Abstract
 {
     public interface IUserService : IGenericService<UserInfo>
     {
-        Task<UserInfo> GetUserByUsername(string username);
         Task CreateUser(UserInfo user);
-        Task Login(LoginModel model);
+        Task DeleteUser(int id);
+        Task<UserInfo> Login(string username, string password);
+        Task<UserInfo> GetUserByUsername(string username);
         Task ForgotPassword(ForgotPasswordModel model);
-        Task ResetPassword(ForgotPasswordModel model);
+        Task ResetPassword(ForgotPasswordModel model,string newPassword);
+        Task<UserInfo> GetUserByResetToken(string resetToken);
     }
 }

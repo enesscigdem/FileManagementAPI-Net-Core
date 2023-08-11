@@ -3,7 +3,6 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
-using FileOrbisApi.Folder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -131,7 +130,6 @@ namespace FileOrbisApi.Controllers
         }
         [HttpPut]
         [Route("[action]")]
-        [AllowAnonymous]
         public async Task<IActionResult> RenameFolder([FromBody] FolderInfo folder)
         {
             try

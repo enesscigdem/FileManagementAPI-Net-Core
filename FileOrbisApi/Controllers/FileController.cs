@@ -3,7 +3,6 @@ using FileOrbis.BusinessLayer.Concrete;
 using FileOrbis.DataAccessLayer.Abstract;
 using FileOrbis.DataAccessLayer.Context;
 using FileOrbis.EntityLayer.Concrete;
-using FileOrbisApi.Folder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -101,7 +100,6 @@ namespace FileOrbisApi.Controllers
         }
         [HttpPut]
         [Route("[action]")]
-        [AllowAnonymous]
         public async Task<IActionResult> RenameFile([FromBody] FileInfos file)
         {
             try
@@ -135,7 +133,6 @@ namespace FileOrbisApi.Controllers
         }
         [HttpPost]
         [Route("[action]")]
-        [AllowAnonymous]
         [RequestFormLimits(ValueLengthLimit = int.MaxValue,
         MultipartBodyLengthLimit = long.MaxValue)]
         [DisableRequestSizeLimit]
@@ -185,7 +182,6 @@ namespace FileOrbisApi.Controllers
         }
 
         [HttpGet("[action]/{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetImageByFileId(int id)
         {
             return await GetFileByType(id, IsImageFile, "image/jpeg");

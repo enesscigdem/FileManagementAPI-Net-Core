@@ -20,7 +20,25 @@ namespace FileOrbis.DataAccessLayer.Repositories
         {
             _context = context;
         }
-
+        public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)
+        {
+            return await _context.FileInfo
+                .Where(f => f.FolderID == folderID)
+                .ToListAsync();
+        }
+        public async Task RenameFile(FileInfos file)
+        {
+            var existingFolder = await GetListByID(file.FileID);
+            if (existingFolder != null)
+            {
+                existingFolder.FileName = file.FileName;
+                string newPath = Path.Combine(Path.GetDirectoryName(existingFolder.Path), existingFolder.FileName);
+                System.IO.File.Move(existingFolder.Path, newPath);
+                existingFolder.Path = newPath;
+                await Update(existingFolder);
+                await SaveChangesAsync();
+            }
+        }
         public async Task DeleteFile(int id)
         {
             var file = await GetListByID(id);
@@ -30,6 +48,19 @@ namespace FileOrbis.DataAccessLayer.Repositories
                 await Delete(id);
                 await SaveChangesAsync();
             }
+        }
+        public async Task<(byte[] fileBytes, string fileName)> DownloadFile(int id)
+        {
+            var file = await GetListByID(id);
+            if (file == null)
+                return (null, null);
+
+            if (!System.IO.File.Exists(file.Path))
+                return (null, null);
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(file.Path);
+
+            return (fileBytes, file.FileName);
         }
         public async Task<FileInfos> UploadFile(IFormFile file, int folderID)
         {
@@ -68,40 +99,6 @@ namespace FileOrbis.DataAccessLayer.Repositories
             catch (Exception ex)
             {
                 throw new Exception("An error occurred while uploading the file: " + ex.Message);
-            }
-        }
-
-        public async Task<(byte[] fileBytes, string fileName)> DownloadFile(int id)
-        {
-            var file = await GetListByID(id);
-            if (file == null)
-                return (null, null);
-
-            if (!System.IO.File.Exists(file.Path))
-                return (null, null);
-
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(file.Path);
-
-            return (fileBytes, file.FileName);
-        }
-
-        public async Task<List<FileInfos>> GetFilesByFolderID(int folderID)
-        {
-            return await _context.FileInfo
-                .Where(f => f.FolderID == folderID)
-                .ToListAsync();
-        }
-        public async Task RenameFile(FileInfos file)
-        {
-            var existingFolder = await GetListByID(file.FileID);
-            if (existingFolder != null)
-            {
-                existingFolder.FileName = file.FileName;
-                string newPath = Path.Combine(Path.GetDirectoryName(existingFolder.Path), existingFolder.FileName);
-                System.IO.File.Move(existingFolder.Path, newPath);
-                existingFolder.Path = newPath;
-                await Update(existingFolder);
-                await SaveChangesAsync();
             }
         }
     }

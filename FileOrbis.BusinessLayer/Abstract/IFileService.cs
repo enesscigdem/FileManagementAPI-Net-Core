@@ -15,6 +15,5 @@ namespace FileOrbis.BusinessLayer.Abstract
         Task RenameFile(FileInfos file);
         Task<(byte[] fileBytes, string fileName)> DownloadFile(int id);
         Task<FileInfos> UploadFile(IFormFile file, int folderID);
-
     }
 }
