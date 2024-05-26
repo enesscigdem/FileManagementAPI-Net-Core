@@ -1,8 +1,3 @@
-**FileManagementAPI**
-
-### Professional README
-
-```markdown
 # FileManagementAPI
 
 ## Overview
